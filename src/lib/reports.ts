@@ -1,0 +1,272 @@
+import { fallbackRecommendations } from '@/lib/lautbersih'
+import { getPayloadClient } from '@/lib/getPayloadClient'
+
+type RelationDoc = {
+  id?: number | string
+  alt?: string | null
+  color?: string | null
+  filename?: string | null
+  title?: string | null
+  slug?: string | null
+  url?: string | null
+}
+
+type RawReport = {
+  aiAnalysis?: {
+    recommendations?: Array<{ item?: string | null }> | null
+    summary?: string | null
+  } | null
+  category?: RelationDoc | number | string | null
+  createdAt?: string
+  description?: string | null
+  estimatedVolume?: string | null
+  id?: number | string
+  latitude?: number | null
+  locationLabel?: string | null
+  longitude?: number | null
+  photos?: Array<RelationDoc | number | string> | null
+  reporterName?: string | null
+  severity?: 'low' | 'medium' | 'critical' | null
+  slug?: string | null
+  status?:
+    | 'in_progress'
+    | 'pending_review'
+    | 'rejected'
+    | 'resolved'
+    | 'validated'
+    | null
+  submittedAt?: string | null
+  title?: string | null
+}
+
+export type FrontendCategory = {
+  color: string
+  id: string
+  slug: string
+  title: string
+}
+
+export type FrontendReport = {
+  category: FrontendCategory | null
+  description: string
+  estimatedVolume: string | null
+  id: string
+  latitude: number
+  locationLabel: string
+  longitude: number
+  photoUrls: string[]
+  recommendations: string[]
+  reporterName: string
+  severity: 'critical' | 'low' | 'medium'
+  slug: string
+  status: 'in_progress' | 'pending_review' | 'rejected' | 'resolved' | 'validated'
+  submittedAt: string
+  summary: string
+  title: string
+}
+
+export type DashboardStats = {
+  byCategory: Array<{ label: string; total: number }>
+  byStatus: Array<{ label: string; total: number }>
+  criticalCount: number
+  resolvedCount: number
+  timeline: Array<{ label: string; total: number }>
+  topLocations: Array<{ label: string; total: number }>
+  total: number
+  validatedCount: number
+}
+
+export type SiteSettingsData = {
+  heroDescription: string
+  heroTitle: string
+  siteName: string
+  statsNotice: string
+  tagline: string
+}
+
+const defaultSiteSettings: SiteSettingsData = {
+  heroDescription:
+    'LautBersih membantu warga, relawan, dan admin memantau sebaran sampah pesisir secara real-time dengan alur validasi yang jelas.',
+  heroTitle: 'Laporkan titik pencemaran pesisir dengan cepat dan terstruktur.',
+  siteName: 'LautBersih',
+  statsNotice: 'Data dashboard diperbarui dari laporan yang masuk ke Payload CMS.',
+  tagline: 'Platform pelaporan sampah pesisir berbasis komunitas',
+}
+
+const statusLabels: Record<FrontendReport['status'], string> = {
+  in_progress: 'Dalam Penanganan',
+  pending_review: 'Menunggu Review',
+  rejected: 'Ditolak',
+  resolved: 'Selesai',
+  validated: 'Tervalidasi',
+}
+
+const normalizeMediaURL = (relation: RelationDoc | number | string): string | null => {
+  if (!relation || typeof relation === 'number' || typeof relation === 'string') {
+    return null
+  }
+
+  if (relation.url) {
+    return relation.url
+  }
+
+  if (relation.filename) {
+    return `/api/media/file/${relation.filename}`
+  }
+
+  return null
+}
+
+const normalizeCategory = (value: RawReport['category']): FrontendCategory | null => {
+  if (!value || typeof value === 'number' || typeof value === 'string') {
+    return null
+  }
+
+  return {
+    color: value.color || '#52B788',
+    id: String(value.id || value.slug || 'uncategorized'),
+    slug: value.slug || 'uncategorized',
+    title: value.title || 'Tanpa Kategori',
+  }
+}
+
+const normalizeReport = (doc: RawReport): FrontendReport => {
+  const recommendations =
+    doc.aiAnalysis?.recommendations
+      ?.map((entry) => entry.item?.trim())
+      .filter((entry): entry is string => Boolean(entry)) || fallbackRecommendations
+
+  return {
+    category: normalizeCategory(doc.category),
+    description: doc.description || 'Belum ada deskripsi laporan.',
+    estimatedVolume: doc.estimatedVolume || null,
+    id: String(doc.id || ''),
+    latitude: typeof doc.latitude === 'number' ? doc.latitude : -6.2,
+    locationLabel: doc.locationLabel || 'Lokasi belum ditentukan',
+    longitude: typeof doc.longitude === 'number' ? doc.longitude : 106.8,
+    photoUrls: (doc.photos || [])
+      .map((photo) => normalizeMediaURL(photo))
+      .filter((photo): photo is string => Boolean(photo)),
+    recommendations,
+    reporterName: doc.reporterName || 'Anonim',
+    severity: doc.severity || 'medium',
+    slug: doc.slug || String(doc.id || ''),
+    status: doc.status || 'pending_review',
+    submittedAt: doc.submittedAt || doc.createdAt || new Date().toISOString(),
+    summary:
+      doc.aiAnalysis?.summary ||
+      'Sistem akan menampilkan ringkasan AI setelah laporan divalidasi dan diproses.',
+    title: doc.title || 'Laporan Baru',
+  }
+}
+
+export const getSiteSettings = async (): Promise<SiteSettingsData> => {
+  const payload = await getPayloadClient()
+
+  try {
+    const data = (await payload.findGlobal({
+      slug: 'site-settings',
+    })) as Partial<SiteSettingsData>
+
+    return {
+      heroDescription: data.heroDescription || defaultSiteSettings.heroDescription,
+      heroTitle: data.heroTitle || defaultSiteSettings.heroTitle,
+      siteName: data.siteName || defaultSiteSettings.siteName,
+      statsNotice: data.statsNotice || defaultSiteSettings.statsNotice,
+      tagline: data.tagline || defaultSiteSettings.tagline,
+    }
+  } catch {
+    return defaultSiteSettings
+  }
+}
+
+export const getWasteCategories = async (): Promise<FrontendCategory[]> => {
+  const payload = await getPayloadClient()
+  const result = await payload.find({
+    collection: 'waste-categories',
+    limit: 24,
+    overrideAccess: false,
+    sort: 'title',
+  })
+
+  return result.docs.map((doc: any) => ({
+    color: doc.color || '#52B788',
+    id: String(doc.id || doc.slug || 'uncategorized'),
+    slug: doc.slug || 'uncategorized',
+    title: doc.title || 'Tanpa Kategori',
+  }))
+}
+
+export const getReports = async (limit = 12): Promise<FrontendReport[]> => {
+  const payload = await getPayloadClient()
+  const result = await payload.find({
+    collection: 'reports',
+    depth: 2,
+    limit,
+    overrideAccess: false,
+    sort: '-submittedAt',
+  })
+
+  return result.docs.map((doc) => normalizeReport(doc as RawReport))
+}
+
+export const getReportBySlug = async (slug: string): Promise<FrontendReport | null> => {
+  const payload = await getPayloadClient()
+  const result = await payload.find({
+    collection: 'reports',
+    depth: 2,
+    limit: 1,
+    overrideAccess: false,
+    where: {
+      slug: {
+        equals: slug,
+      },
+    },
+  })
+
+  const doc = result.docs[0] as RawReport | undefined
+  return doc ? normalizeReport(doc) : null
+}
+
+export const buildDashboardStats = (reports: FrontendReport[]): DashboardStats => {
+  const categoryCounts = new Map<string, number>()
+  const statusCounts = new Map<string, number>()
+  const locationCounts = new Map<string, number>()
+  const timelineCounts = new Map<string, number>()
+
+  reports.forEach((report) => {
+    const categoryLabel = report.category?.title || 'Tanpa Kategori'
+    categoryCounts.set(categoryLabel, (categoryCounts.get(categoryLabel) || 0) + 1)
+
+    const statusLabel = statusLabels[report.status]
+    statusCounts.set(statusLabel, (statusCounts.get(statusLabel) || 0) + 1)
+
+    locationCounts.set(report.locationLabel, (locationCounts.get(report.locationLabel) || 0) + 1)
+
+    const date = new Date(report.submittedAt)
+    const timelineLabel = date.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+    })
+    timelineCounts.set(timelineLabel, (timelineCounts.get(timelineLabel) || 0) + 1)
+  })
+
+  return {
+    byCategory: Array.from(categoryCounts.entries())
+      .map(([label, total]) => ({ label, total }))
+      .sort((left, right) => right.total - left.total),
+    byStatus: Array.from(statusCounts.entries()).map(([label, total]) => ({ label, total })),
+    criticalCount: reports.filter((report) => report.severity === 'critical').length,
+    resolvedCount: reports.filter((report) => report.status === 'resolved').length,
+    timeline: Array.from(timelineCounts.entries())
+      .map(([label, total]) => ({ label, total }))
+      .slice(0, 7)
+      .reverse(),
+    topLocations: Array.from(locationCounts.entries())
+      .map(([label, total]) => ({ label, total }))
+      .sort((left, right) => right.total - left.total)
+      .slice(0, 5),
+    total: reports.length,
+    validatedCount: reports.filter((report) => report.status === 'validated').length,
+  }
+}

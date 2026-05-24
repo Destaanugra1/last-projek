@@ -50,3 +50,5 @@ node_modules/
 /playwright/.cache/
 
 opencode.json
+.windsurf
+alurweb.md

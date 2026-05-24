@@ -1,6 +1,9 @@
 import { DM_Sans, DM_Serif_Display } from 'next/font/google'
 import React from 'react'
-import './styles.css'
+import './styles/styles.scss'
+
+import { Footer } from '@/components/lautbersih/Footer'
+import { Navbar } from '@/components/lautbersih/Navbar'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -23,7 +26,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang="id">
-      <body className={`${dmSans.variable} ${dmSerif.variable}`}>{children}</body>
+      <body className={`${dmSans.variable} ${dmSerif.variable}`}>
+        <Navbar />
+        {children}
+        <Footer />
+      </body>
     </html>
   )
 }

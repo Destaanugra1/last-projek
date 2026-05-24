@@ -1,19 +1,28 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-export const AppShell = ({
+import { getCurrentUser } from '@/lib/auth'
+
+import { LogoutButton } from './LogoutButton'
+
+export const AppShell = async ({
   activePath,
   children,
 }: {
-  activePath: '/dashboard' | '/petawilayah' | '/lapor' | '/notifikasi' | '/profil'
+  activePath: '/petawilayah' | '/lapor' | '/laporan' | '/komunitas' | '/berita' | '/notifikasi' | '/profil'
   children: ReactNode
 }) => {
+  const user = await getCurrentUser()
   const navItems = [
-    { href: '/dashboard', label: 'Overview', meta: 'Dashboard Ringkasan' },
     { href: '/petawilayah', label: 'Peta Wilayah', meta: 'Monitoring Interaktif' },
-    { href: '/lapor', label: 'Pelaporan', meta: 'Form Laporan Baru' },
-    { href: '/profil', label: 'Komunitas', meta: 'Profil Kontributor' },
+    { href: '/lapor', label: 'Pelaporan', meta: 'Kirim Laporan Baru' },
+    { href: '/komunitas', label: 'Komunitas', meta: 'Kontributor & Aktivitas' },
+    { href: '/berita', label: 'Berita', meta: 'Liputan Pencemaran' },
+    { href: '/profil', label: 'Profil Saya', meta: 'Akun & Statistik' },
   ] as const
+
+  const navActiveHref =
+    activePath === '/laporan' ? '/lapor' : activePath === '/berita' ? '/berita' : activePath
 
   const activeMeta =
     {
@@ -21,21 +30,29 @@ export const AppShell = ({
         eyebrow: 'Live Monitoring',
         title: 'Peta pesisir real-time',
       },
-      '/dashboard': {
-        eyebrow: 'Maritime Control',
-        title: 'Ikhtisar operasional LautBersih',
-      },
       '/lapor': {
-        eyebrow: 'New Incident Report',
-        title: 'Form pelaporan maritim terpadu',
+        eyebrow: 'Form Pelaporan Baru',
+        title: 'Laporkan titik pencemaran pesisir',
+      },
+      '/laporan': {
+        eyebrow: 'Detail Laporan',
+        title: 'Informasi lengkap & analisis AI',
+      },
+      '/komunitas': {
+        eyebrow: 'Komunitas LautBersih',
+        title: 'Kontributor & aktivitas pelaporan',
+      },
+      '/berita': {
+        eyebrow: 'Berita Lingkungan',
+        title: 'Liputan pencemaran pesisir Indonesia',
       },
       '/notifikasi': {
         eyebrow: 'Signal Feed',
         title: 'Pembaruan notifikasi laporan',
       },
       '/profil': {
-        eyebrow: 'Community Hub',
-        title: 'Ringkasan akun dan kontribusi',
+        eyebrow: 'Profil Kontributor',
+        title: 'Akun, badge, dan riwayat kontribusi',
       },
     }[activePath] || {
       eyebrow: 'LautBersih',
@@ -49,7 +66,7 @@ export const AppShell = ({
           <span className="lb-brand__mark">L</span>
           <span>
             <strong>LautBersih</strong>
-            <small>Maritime Authority</small>
+            <small>Pesisir Indonesia</small>
           </span>
         </Link>
 
@@ -57,7 +74,7 @@ export const AppShell = ({
           {navItems.map((item) => (
             <Link
               key={item.href}
-              className={item.href === activePath ? 'is-active' : undefined}
+              className={item.href === navActiveHref ? 'is-active' : undefined}
               href={item.href}
             >
               <span>{item.label}</span>
@@ -84,21 +101,35 @@ export const AppShell = ({
             <strong>{activeMeta.title}</strong>
           </div>
           <div className="lb-topbar__actions">
-            <Link className="lb-mini-link" href="/mulai">
-              Onboarding
-            </Link>
             <Link className="lb-mini-link" href="/notifikasi">
-              Signal Feed
+              Notifikasi
             </Link>
-            <Link className="lb-mini-link" href="/profil">
-              Community
-            </Link>
+            {user ? (
+              <div className="lb-topbar__user">
+                <Link className="lb-topbar__user-info" href="/profil">
+                  <div className="lb-topbar__avatar">
+                    {(user.fullName ?? user.email ?? 'U').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="lb-topbar__user-meta">
+                    <strong>{user.fullName ?? user.email}</strong>
+                    <span className={`lb-topbar__role lb-topbar__role--${user.role}`}>
+                      {user.role === 'admin' ? 'Admin' : 'Reporter'}
+                    </span>
+                  </div>
+                </Link>
+                <LogoutButton />
+              </div>
+            ) : (
+              <Link className="lb-mini-link" href="/login">
+                Masuk
+              </Link>
+            )}
           </div>
         </header>
         <main className="lb-main">{children}</main>
       </div>
 
-      <nav className="lb-bottom-nav" aria-label="Navigasi utama">
+      {/* <nav className="lb-bottom-nav" aria-label="Navigasi utama">
         {[
           { href: '/petawilayah', label: 'Peta' },
           { href: '/lapor', label: 'Laporkan' },
@@ -115,7 +146,7 @@ export const AppShell = ({
             {item.label}
           </Link>
         ))}
-      </nav>
+      </nav> */}
     </div>
   )
 }

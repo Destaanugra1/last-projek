@@ -1,90 +1,25 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { FrontendCategory, FrontendReport } from '@/lib/reports'
+import type { MapMarker } from './LeafletMap'
 
-type MarkerKey = 'coral' | 'fishing' | 'oil-spill'
+const LeafletMap = dynamic(() => import('./LeafletMap').then((m) => ({ default: m.LeafletMap })), {
+  loading: () => <div className="lb-monitoring__map-loading">Memuat peta...</div>,
+  ssr: false,
+})
 
-const imageByKey: Record<MarkerKey, string> = {
-  coral:
-    'https://images.unsplash.com/photo-1546026423-cc4642628d2b?q=80&w=1974&auto=format&fit=crop',
-  fishing:
-    'https://images.unsplash.com/photo-1534433100236-8e5033722e06?q=80&w=2070&auto=format&fit=crop',
-  'oil-spill':
-    'https://images.unsplash.com/photo-1621451537084-482c73073a0f?q=80&w=1974&auto=format&fit=crop',
+const SEVERITY_LABEL: Record<string, string> = {
+  critical: 'KRITIS',
+  low: 'RENDAH',
+  medium: 'MENENGAH',
 }
-
-const recommendationBySeverity: Record<FrontendReport['severity'], string> = {
-  critical:
-    'Segera kerahkan unit pembersih dan batasi lalu lintas kapal di radius terdampak untuk mencegah eskalasi pencemaran.',
-  low: 'Lanjutkan monitoring rutin dan dokumentasikan perubahan visual untuk evaluasi berkala.',
-  medium:
-    'Luncurkan inspeksi lapangan dan koordinasikan drone pengintai untuk konfirmasi visual tambahan.',
-}
-
-const fallbackAnalysis = {
-  coral: {
-    category: 'Coral Restoration Zone',
-    recommendation:
-      'Laporan rutin mingguan: pertumbuhan polip karang menunjukkan tren positif dan area tetap aman dari aktivitas destruktif.',
-    severity: 'RENDAH',
-    title: 'Restorasi Karang Wakatobi',
-  },
-  fishing: {
-    category: 'Illegal Fishing Suspected',
-    recommendation:
-      'Kapal tanpa identitas AIS terdeteksi melakukan manuver mencurigakan. Luncurkan drone pengintai untuk konfirmasi visual.',
-    severity: 'MENENGAH',
-    title: 'Kapal Asing Selat Makassar',
-  },
-  'oil-spill': {
-    category: 'Oil Spill Detection',
-    recommendation:
-      'Segera kerahkan unit pembersih dari pos terdekat dan koordinasikan pembatasan jalur pelayaran di sektor terdampak.',
-    severity: 'KRITIS',
-    title: 'Tumpahan Minyak Balikpapan',
-  },
-} as const
 
 const formatClock = () =>
-  `${new Date().toLocaleTimeString('id-ID', {
-    hour12: false,
-  })} WIB`
-
-const buildMarkerAnalysis = (reports: FrontendReport[]) => {
-  const critical = reports.find((report) => report.severity === 'critical')
-  const medium = reports.find((report) => report.severity === 'medium')
-  const low = reports.find((report) => report.severity === 'low')
-
-  return {
-    coral: low
-      ? {
-          category: low.category?.title || fallbackAnalysis.coral.category,
-          recommendation: low.recommendations[0] || recommendationBySeverity.low,
-          severity: 'RENDAH',
-          title: low.title,
-        }
-      : fallbackAnalysis.coral,
-    fishing: medium
-      ? {
-          category: medium.category?.title || fallbackAnalysis.fishing.category,
-          recommendation: medium.recommendations[0] || recommendationBySeverity.medium,
-          severity: 'MENENGAH',
-          title: medium.title,
-        }
-      : fallbackAnalysis.fishing,
-    'oil-spill': critical
-      ? {
-          category: critical.category?.title || fallbackAnalysis['oil-spill'].category,
-          recommendation: critical.recommendations[0] || recommendationBySeverity.critical,
-          severity: 'KRITIS',
-          title: critical.title,
-        }
-      : fallbackAnalysis['oil-spill'],
-  }
-}
+  new Date().toLocaleTimeString('id-ID', { hour12: false }) + ' WIB'
 
 export const MapMonitoringExperience = ({
   categories,
@@ -93,79 +28,95 @@ export const MapMonitoringExperience = ({
   categories: FrontendCategory[]
   reports: FrontendReport[]
 }) => {
-  const [activeMarker, setActiveMarker] = useState<MarkerKey | null>(null)
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null)
   const [clock, setClock] = useState(formatClock())
-
-  const analysis = useMemo(() => buildMarkerAnalysis(reports), [reports])
-
-  const categoryCounts = useMemo(
-    () =>
-      categories.slice(0, 3).map((category, index) => ({
-        count: reports.filter((report) => report.category?.id === category.id).length,
-        icon: index === 0 ? '◉' : index === 1 ? '◌' : '△',
-        title: category.title,
-      })),
-    [categories, reports],
-  )
-
-  const severityCounts = useMemo(
-    () => ({
-      critical: reports.filter((report) => report.severity === 'critical').length,
-      low: reports.filter((report) => report.severity === 'low').length,
-      medium: reports.filter((report) => report.severity === 'medium').length,
-    }),
-    [reports],
-  )
+  const [activeSeverityFilter, setActiveSeverityFilter] = useState<string | null>(null)
 
   useEffect(() => {
     const interval = setInterval(() => setClock(formatClock()), 1000)
     return () => clearInterval(interval)
   }, [])
 
-  const activeData = activeMarker ? analysis[activeMarker] : null
+  const allMarkers: MapMarker[] = useMemo(
+    () =>
+      reports
+        .filter((r) => r.latitude && r.longitude)
+        .map((r) => ({
+          category: r.category?.title ?? 'Tidak diketahui',
+          id: r.id,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          recommendations: r.recommendations,
+          severity: r.severity,
+          status: r.status,
+          summary: r.summary,
+          title: r.title,
+        })),
+    [reports],
+  )
+
+  const visibleMarkers = useMemo(
+    () =>
+      activeSeverityFilter
+        ? allMarkers.filter((m) => m.severity === activeSeverityFilter)
+        : allMarkers,
+    [allMarkers, activeSeverityFilter],
+  )
+
+  const severityCounts = useMemo(
+    () => ({
+      critical: reports.filter((r) => r.severity === 'critical').length,
+      low: reports.filter((r) => r.severity === 'low').length,
+      medium: reports.filter((r) => r.severity === 'medium').length,
+    }),
+    [reports],
+  )
+
+  const categoryCounts = useMemo(
+    () =>
+      categories.slice(0, 4).map((cat, i) => ({
+        count: reports.filter((r) => r.category?.id === cat.id).length,
+        icon: ['◉', '◌', '△', '◆'][i] ?? '●',
+        title: cat.title,
+      })),
+    [categories, reports],
+  )
+
+  const handleSelect = useCallback((marker: MapMarker | null) => {
+    setSelectedMarker(marker)
+  }, [])
+
+  const activeReport = selectedMarker
+    ? reports.find((r) => r.id === selectedMarker.id)
+    : null
+
+  const severityTone = activeReport?.severity ?? 'low'
+  const tickerText = reports
+    .slice(0, 5)
+    .map((r) => `${r.title} · ${SEVERITY_LABEL[r.severity]} · ${r.locationLabel}`)
+    .join(' • ')
 
   return (
     <div className="lb-monitoring">
-      <header className="lb-monitoring__nav-wrap">
-        <nav className="lb-monitoring__nav">
-          <div className="lb-monitoring__brand-group">
-            <Link className="lb-monitoring__brand" href="/">
-              LautBersih
-            </Link>
-            <div className="lb-monitoring__links">
-              <Link href="/dashboard">Dashboard</Link>
-              <Link href="/profil">Armada</Link>
-              <Link className="is-active" href="/petawilayah">
-                Peta Wilayah
-              </Link>
-              <Link href="/lapor">Dokumen</Link>
-            </div>
-          </div>
-          <Link className="lb-monitoring__cta" href="/lapor">
-            Buat Laporan
-          </Link>
-        </nav>
-      </header>
-
       <main className="lb-monitoring__main">
         <aside className="lb-monitoring__sidebar">
           <div className="lb-monitoring__sidebar-head">
             <h2>Filter Monitoring</h2>
-            <p>Konfigurasi visualisasi data real-time</p>
+            <p>Visualisasi data laporan real-time</p>
           </div>
 
           <div className="lb-monitoring__sidebar-body">
             <section>
               <label>Kategori Insiden</label>
               <div className="lb-monitoring__category-list">
-                {categoryCounts.map((category, index) => (
-                  <label className="lb-monitoring__category-row" key={`${category.title}-${index}`}>
+                {categoryCounts.map((cat) => (
+                  <label className="lb-monitoring__category-row" key={cat.title}>
                     <div>
-                      <span className="lb-monitoring__row-icon">{category.icon}</span>
-                      <span>{category.title}</span>
+                      <span className="lb-monitoring__row-icon">{cat.icon}</span>
+                      <span>{cat.title}</span>
                     </div>
                     <div>
-                      <b>{String(category.count).padStart(2, '0')}</b>
+                      <b>{String(cat.count).padStart(2, '0')}</b>
                       <input defaultChecked type="checkbox" />
                     </div>
                   </label>
@@ -176,25 +127,32 @@ export const MapMonitoringExperience = ({
             <section>
               <label>Tingkat Keparahan</label>
               <div className="lb-monitoring__severity-toggle">
-                <button className="is-active" type="button">
-                  Kritis
-                </button>
-                <button type="button">Menengah</button>
-                <button type="button">Rendah</button>
+                {(['critical', 'medium', 'low'] as const).map((sev) => (
+                  <button
+                    className={activeSeverityFilter === sev ? 'is-active' : ''}
+                    key={sev}
+                    onClick={() =>
+                      setActiveSeverityFilter((prev) => (prev === sev ? null : sev))
+                    }
+                    type="button"
+                  >
+                    {SEVERITY_LABEL[sev]}
+                  </button>
+                ))}
               </div>
 
               <div className="lb-monitoring__severity-stats">
                 <div>
                   <p>Kritis</p>
-                  <strong>{severityCounts.critical}</strong>
+                  <strong className="is-critical-text">{severityCounts.critical}</strong>
                 </div>
                 <div>
                   <p>Menengah</p>
-                  <strong>{severityCounts.medium}</strong>
+                  <strong className="is-medium-text">{severityCounts.medium}</strong>
                 </div>
                 <div>
                   <p>Rendah</p>
-                  <strong>{severityCounts.low}</strong>
+                  <strong className="is-low-text">{severityCounts.low}</strong>
                 </div>
               </div>
             </section>
@@ -209,6 +167,22 @@ export const MapMonitoringExperience = ({
                 <option>Perairan Raja Ampat</option>
               </select>
             </section>
+
+            <div className="lb-monitoring__map-legend">
+              <h4>Legenda Kondisi Laut</h4>
+              <div>
+                <span className="lb-map-dot lb-map-dot--critical" style={{ display: 'inline-block', height: 12, width: 12 }} />
+                <p>Tercemar Kritis</p>
+              </div>
+              <div>
+                <span className="lb-map-dot lb-map-dot--medium" style={{ display: 'inline-block', height: 12, width: 12 }} />
+                <p>Tercemar Menengah</p>
+              </div>
+              <div>
+                <span className="lb-map-dot lb-map-dot--low" style={{ display: 'inline-block', height: 12, width: 12 }} />
+                <p>Kondisi Aman / Bersih</p>
+              </div>
+            </div>
           </div>
 
           <div className="lb-monitoring__sdg">
@@ -218,118 +192,83 @@ export const MapMonitoringExperience = ({
         </aside>
 
         <section className="lb-monitoring__canvas-wrap">
-          <div className="lb-monitoring__map-bg" />
-          <div className="lb-monitoring__map-grid" />
+          <LeafletMap
+            markers={visibleMarkers}
+            onSelect={handleSelect}
+            selectedId={selectedMarker?.id ?? null}
+          />
 
-          <div className="lb-monitoring__controls">
-            <div className="lb-monitoring__zoom-stack">
-              <button type="button">+</button>
-              <button type="button">-</button>
-            </div>
-            <button type="button">◎</button>
-            <button type="button">▦</button>
-          </div>
-
-          <div className="lb-monitoring__legend">
-            <h4>Legenda Monitoring</h4>
-            <div>
-              <span className="is-critical" />
-              <p>Kritis (Mendesak)</p>
-            </div>
-            <div>
-              <span className="is-medium" />
-              <p>Menengah (Waspada)</p>
-            </div>
-            <div>
-              <span className="is-low" />
-              <p>Rendah (Aman)</p>
-            </div>
-          </div>
-
-          <button
-            className="lb-monitoring__marker lb-monitoring__marker--critical"
-            onClick={() => setActiveMarker((current) => (current === 'oil-spill' ? null : 'oil-spill'))}
-            style={{ left: '50%', top: '33%' }}
-            type="button"
-          >
-            <span />
-          </button>
-          <button
-            className="lb-monitoring__marker lb-monitoring__marker--medium"
-            onClick={() => setActiveMarker((current) => (current === 'fishing' ? null : 'fishing'))}
-            style={{ left: '33%', top: '50%' }}
-            type="button"
-          >
-            <span />
-          </button>
-          <button
-            className="lb-monitoring__marker lb-monitoring__marker--low"
-            onClick={() => setActiveMarker((current) => (current === 'coral' ? null : 'coral'))}
-            style={{ left: '75%', top: '72%' }}
-            type="button"
-          >
-            <span />
-          </button>
-
-          <aside className={`lb-monitoring__analysis${activeMarker ? ' is-open' : ''}`}>
-            <div className="lb-monitoring__analysis-inner">
-              <div className="lb-monitoring__analysis-head">
-                <div>
-                  <span>AI Satellite Insight</span>
-                  <h3>{activeData?.title || 'Detail Analisis'}</h3>
-                </div>
-                <button onClick={() => setActiveMarker(null)} type="button">
-                  ×
-                </button>
-              </div>
-
-              <div className="lb-monitoring__analysis-media">
-                {activeData ? <img alt={activeData.title} src={imageByKey[activeMarker as MarkerKey]} /> : null}
-              </div>
-
-              <div
-                className={`lb-monitoring__analysis-card${
-                  activeData?.severity === 'KRITIS'
-                    ? ' is-critical'
-                    : activeData?.severity === 'MENENGAH'
-                      ? ' is-medium'
-                      : ' is-low'
-                }`}
-              >
-                <div className="lb-monitoring__analysis-card-head">
-                  <span>AI</span>
-                  <p>Analisis Sistem LautBersih</p>
-                </div>
-
-                <div className="lb-monitoring__analysis-meta">
+          <aside className={`lb-monitoring__analysis${selectedMarker ? ' is-open' : ''}`}>
+            {selectedMarker && (
+              <div className="lb-monitoring__analysis-inner">
+                <div className="lb-monitoring__analysis-head">
                   <div>
-                    <small>Kategori</small>
-                    <strong>{activeData?.category || 'Oil Spill Detection'}</strong>
+                    <span>AI Satellite Insight</span>
+                    <h3>{selectedMarker.title}</h3>
                   </div>
-                  <div>
-                    <small>Status</small>
-                    <strong>{activeData?.severity || 'KRITIS'}</strong>
-                  </div>
-                  <div>
-                    <small>Confidence</small>
-                    <strong>98.4%</strong>
-                  </div>
+                  <button onClick={() => setSelectedMarker(null)} type="button">
+                    ×
+                  </button>
                 </div>
 
-                <div className="lb-monitoring__analysis-recommendation">
-                  <small>Rekomendasi AI</small>
-                  <p>
-                    {activeData?.recommendation ||
-                      'Segera kerahkan unit pembersih dan koordinasikan pembatasan area terdampak.'}
-                  </p>
+                {activeReport?.photoUrls?.[0] && (
+                  <div className="lb-monitoring__analysis-media">
+                    <img alt={selectedMarker.title} src={activeReport.photoUrls[0]} />
+                  </div>
+                )}
+
+                <div
+                  className={`lb-monitoring__analysis-card${
+                    severityTone === 'critical'
+                      ? ' is-critical'
+                      : severityTone === 'medium'
+                        ? ' is-medium'
+                        : ' is-low'
+                  }`}
+                >
+                  <div className="lb-monitoring__analysis-card-head">
+                    <span>AI</span>
+                    <p>Analisis Sistem LautBersih</p>
+                  </div>
+
+                  <div className="lb-monitoring__analysis-meta">
+                    <div>
+                      <small>Kategori</small>
+                      <strong>{selectedMarker.category}</strong>
+                    </div>
+                    <div>
+                      <small>Status</small>
+                      <strong>{SEVERITY_LABEL[severityTone]}</strong>
+                    </div>
+                    <div>
+                      <small>Kondisi</small>
+                      <strong>
+                        {severityTone === 'low' ? '🟢 Bersih' : severityTone === 'medium' ? '🟠 Waspada' : '🔴 Kotor'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {selectedMarker.summary && (
+                    <div className="lb-monitoring__analysis-recommendation">
+                      <small>Ringkasan AI</small>
+                      <p>{selectedMarker.summary}</p>
+                    </div>
+                  )}
+
+                  {selectedMarker.recommendations.length > 0 && (
+                    <div className="lb-monitoring__analysis-recommendation">
+                      <small>Rekomendasi Tindakan</small>
+                      <p>{selectedMarker.recommendations[0]}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="lb-monitoring__analysis-actions">
+                  <Link href="/lapor">Tambah Laporan</Link>
+                  <Link href={`/laporan/${activeReport?.slug ?? ''}`}>↗ Detail</Link>
                 </div>
               </div>
-
-              <div className="lb-monitoring__analysis-actions">
-                <Link href="/lapor">Validasi Laporan</Link>
-                <button type="button">↗</button>
-              </div>
-            </div>
+            )}
           </aside>
         </section>
       </main>
@@ -341,14 +280,13 @@ export const MapMonitoringExperience = ({
         </div>
         <div className="lb-monitoring__ticker-marquee">
           <p>
-            LAT: -1.269160 | LNG: 116.825264 • SCAN COMPLETE: 98.4% CONFIDENCE • SATELLITE:
-            LB-SAT-04 • LAST UPDATE: 14:24:05 UTC+7 • REGION: SELAT MAKASSAR • STATUS:
-            MONITORING ACTIVE
+            {tickerText ||
+              'MONITORING AKTIF · SELURUH PERAIRAN INDONESIA · SISTEM ONLINE'}
           </p>
         </div>
         <div className="lb-monitoring__ticker-status">
           <span>{clock}</span>
-          <span>Online</span>
+          <span>Online · {allMarkers.length} Titik</span>
         </div>
       </footer>
 

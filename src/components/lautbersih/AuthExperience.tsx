@@ -1,10 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
+
+import { loginAction, registerAction } from '@/app/(frontend)/auth/actions'
 
 export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
   const [showPassword, setShowPassword] = useState(false)
+  const [loginState, loginFormAction, loginPending] = useActionState(loginAction, { error: null })
+  const [registerState, registerFormAction, registerPending] = useActionState(registerAction, {
+    error: null,
+  })
 
   if (mode === 'login') {
     return (
@@ -48,30 +54,44 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
                   <p>Gunakan kredensial resmi untuk mengakses panel kendali maritim.</p>
                 </header>
 
-                <form className="lb-auth-form" onSubmit={(event) => event.preventDefault()}>
+                <form action={loginFormAction} className="lb-auth-form">
+                  {loginState.error && (
+                    <div className="lb-auth-error" role="alert">
+                      <span>!</span>
+                      <p>{loginState.error}</p>
+                    </div>
+                  )}
+
                   <div className="lb-auth-field">
                     <label htmlFor="login-email">Email atau ID Petugas</label>
                     <div className="lb-auth-field__input-wrap">
                       <span className="lb-auth-field__icon">ID</span>
-                      <input id="login-email" placeholder="contoh@lautbersih.go.id" type="text" />
+                      <input
+                        id="login-email"
+                        name="email"
+                        placeholder="contoh@lautbersih.go.id"
+                        required
+                        type="email"
+                      />
                     </div>
                   </div>
 
                   <div className="lb-auth-field">
                     <div className="lb-auth-field__header">
                       <label htmlFor="login-password">Kata Sandi</label>
-                      <Link href="/register">Lupa Sandi?</Link>
                     </div>
                     <div className="lb-auth-field__input-wrap">
                       <span className="lb-auth-field__icon">•</span>
                       <input
                         id="login-password"
+                        name="password"
                         placeholder="••••••••"
+                        required
                         type={showPassword ? 'text' : 'password'}
                       />
                       <button
                         className="lb-auth-field__toggle"
-                        onClick={() => setShowPassword((value) => !value)}
+                        onClick={() => setShowPassword((v) => !v)}
                         type="button"
                       >
                         {showPassword ? 'Hide' : 'Show'}
@@ -79,20 +99,25 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
                     </div>
                   </div>
 
-                  <label className="lb-auth-checkbox">
-                    <input type="checkbox" />
-                    <span>Tetap masuk selama 30 hari</span>
-                  </label>
-
-                  <button className="lb-auth-submit lb-auth-submit--secondary" type="submit">
-                    MASUK SEKARANG
-                    <span>→</span>
+                  <button
+                    className="lb-auth-submit lb-auth-submit--secondary"
+                    disabled={loginPending}
+                    type="submit"
+                  >
+                    {loginPending ? 'Memproses...' : 'MASUK SEKARANG'}
+                    {!loginPending && <span>→</span>}
                   </button>
+
+                  <div className="lb-auth-switch">
+                    <p>
+                      Belum punya akses? <Link href="/register">Daftar di sini</Link>
+                    </p>
+                  </div>
                 </form>
 
-                <div className="lb-auth-notice lb-auth-notice--dark">
+                <div className="lb-auth-notice lb-auth-notice--dark ">
                   <span>i</span>
-                  <p>
+                  <p className='text-black'>
                     Akses ini dipantau oleh Otoritas Keamanan Siber Nasional. Pastikan Anda masuk
                     menggunakan perangkat resmi yang telah terdaftar.
                   </p>
@@ -108,9 +133,8 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
           <div className="lb-auth-footer__inner">
             <p>© 2024 LautBersih Maritime Authority. All rights reserved.</p>
             <div>
-              <Link href="/profil">Privacy Policy</Link>
-              <Link href="/profil">Terms of Service</Link>
-              <Link href="/profil">Security Standards</Link>
+              <Link href="/">Beranda</Link>
+              <Link href="/register">Daftar Akun</Link>
             </div>
           </div>
         </footer>
@@ -127,7 +151,7 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
           </Link>
           <div className="lb-auth-topnav__links">
             <Link href="/">Main Website</Link>
-            <Link href="/notifikasi">Support</Link>
+            <Link href="/login">Masuk</Link>
           </div>
         </nav>
       </header>
@@ -139,7 +163,7 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
             <div className="lb-auth-register-brand__content">
               <div>
                 <div className="lb-auth-badge">SDG 14 · Life Below Water</div>
-                <h2>Melindungi Kedaulatan & Ekosistem Maritim Nasional.</h2>
+                <h2>Melindungi Kedaulatan &amp; Ekosistem Maritim Nasional.</h2>
                 <p>
                   Bergabunglah dengan jaringan resmi otoritas maritim untuk memantau, melaporkan,
                   dan menjaga kebersihan laut kita.
@@ -165,24 +189,45 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
               <p>Masukkan rincian kredensial dinas Anda di bawah ini.</p>
             </div>
 
-            <form className="lb-auth-form" onSubmit={(event) => event.preventDefault()}>
-              <div className="lb-auth-field">
-                <label htmlFor="register-name">Nama Lengkap</label>
-                <input id="register-name" placeholder="Contoh: Adm. Budi Santoso" type="text" />
-              </div>
+            <form action={registerFormAction} className="lb-auth-form">
+              {registerState.error && (
+                <div className="lb-auth-error" role="alert">
+                  <span>!</span>
+                  <p>{registerState.error}</p>
+                </div>
+              )}
 
               <div className="lb-auth-field">
-                <label htmlFor="register-institution">Institusi / Organisasi</label>
+                <label htmlFor="register-name">Nama Lengkap</label>
                 <input
-                  id="register-institution"
-                  placeholder="Contoh: Dirjen Perhubungan Laut"
+                  id="register-name"
+                  name="fullName"
+                  placeholder="Contoh: Adm. Budi Santoso"
+                  required
                   type="text"
                 />
               </div>
 
               <div className="lb-auth-field">
                 <label htmlFor="register-email">Email Kedinasan</label>
-                <input id="register-email" placeholder="nama@instansi.go.id" type="email" />
+                <input
+                  id="register-email"
+                  name="email"
+                  placeholder="nama@instansi.go.id"
+                  required
+                  type="email"
+                />
+              </div>
+
+              <div className="lb-auth-field">
+                <label htmlFor="register-role">Role / Jabatan</label>
+                <div className="lb-auth-field__input-wrap lb-auth-field__input-wrap--select">
+                  <span className="lb-auth-field__icon">◈</span>
+                  <select id="register-role" name="role" defaultValue="reporter">
+                    <option value="reporter">Reporter Lapangan</option>
+                  </select>
+                </div>
+                <small>Akses admin hanya diberikan oleh administrator sistem.</small>
               </div>
 
               <div className="lb-auth-field">
@@ -190,23 +235,29 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
                 <div className="lb-auth-field__input-wrap lb-auth-field__input-wrap--plain">
                   <input
                     id="register-password"
+                    name="password"
                     placeholder="••••••••"
+                    required
                     type={showPassword ? 'text' : 'password'}
                   />
                   <button
                     className="lb-auth-field__toggle"
-                    onClick={() => setShowPassword((value) => !value)}
+                    onClick={() => setShowPassword((v) => !v)}
                     type="button"
                   >
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
                 </div>
-                <small>Minimal 12 karakter dengan kombinasi alfanumerik.</small>
+                <small>Minimal 8 karakter dengan kombinasi alfanumerik.</small>
               </div>
 
-              <button className="lb-auth-submit" type="submit">
-                Daftarkan Personel
-                <span>→</span>
+              <button
+                className="lb-auth-submit"
+                disabled={registerPending}
+                type="submit"
+              >
+                {registerPending ? 'Mendaftarkan...' : 'Daftarkan Personel'}
+                {!registerPending && <span>→</span>}
               </button>
 
               <div className="lb-auth-switch">
@@ -231,9 +282,8 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
         <div className="lb-auth-footer__inner">
           <p>© 2024 LautBersih Maritime Authority. All rights reserved.</p>
           <div>
-            <Link href="/profil">Privacy Policy</Link>
-            <Link href="/profil">Terms of Service</Link>
-            <Link href="/profil">Security Standards</Link>
+            <Link href="/">Beranda</Link>
+            <Link href="/login">Masuk</Link>
           </div>
         </div>
       </footer>

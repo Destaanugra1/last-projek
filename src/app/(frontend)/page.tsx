@@ -1,8 +1,11 @@
 import Link from 'next/link'
 
+import LogoLoop from '@/components/LogoLoop'
+import { LautBersihGlobe } from '@/components/lautbersih/LautBersihGlobe'
 import type { FrontendReport } from '@/lib/reports'
 import { buildDashboardStats, getReports, getSiteSettings } from '@/lib/reports'
 import Image from 'next/image'
+import { getPayloadClient } from '@/lib/getPayloadClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,8 +59,30 @@ const fallbackReports: FrontendReport[] = [
 const formatReportId = (report: FrontendReport, index: number) =>
   `LB-2024-${String(index + 891).padStart(4, '0')}`
 
+async function getPartners() {
+  try {
+    const payload = await getPayloadClient()
+    const result = await payload.find({
+      collection: 'partners',
+      where: {
+        isActive: {
+          equals: true,
+        },
+      },
+      sort: 'order',
+    })
+    return result.docs
+  } catch {
+    return []
+  }
+}
+
 export default async function HomePage() {
-  const [settings, rawReports] = await Promise.all([getSiteSettings(), getReports(12)])
+  const [settings, rawReports, partners] = await Promise.all([
+    getSiteSettings(),
+    getReports(12),
+    getPartners(),
+  ])
   const reports = rawReports.length > 0 ? rawReports : fallbackReports
   const stats = buildDashboardStats(reports)
   const featuredReports = reports.slice(0, 2)
@@ -127,6 +152,42 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {partners.length > 0 && (
+        <section className="lb-home__partners">
+          <div className="lb-home__partners-head">
+            <div className="lb-home__partners-label">Dipercayai oleh</div>
+            <h2 className="lb-home__partners-title">
+              Mitra Strategis Pelindung Maritim Indonesia
+            </h2>
+          </div>
+          <div className="lb-home__partners-loop">
+            <LogoLoop
+              logos={partners
+                .map((partner) => {
+                  const logo = partner.logo as { cloudinaryUrl?: string; url?: string } | undefined
+                  const src = logo?.cloudinaryUrl || logo?.url || ''
+                  return {
+                    src,
+                    alt: partner.name,
+                    href: partner.website || undefined,
+                    title: partner.name,
+                  }
+                })
+                .filter((item) => item.src)}
+              speed={60}
+              direction="left"
+              logoHeight={80}
+              gap={96}
+              hoverSpeed={0}
+              fadeOut
+              fadeOutColor="#0b2540"
+              scaleOnHover
+              ariaLabel="Partner dan institusi yang dipercayai"
+            />
+          </div>
+        </section>
+      )}
+
       <section className="lb-home__stats-wrap">
         <div className="lb-home__stats-grid">
           <div className="lb-home__stat-card">
@@ -171,13 +232,13 @@ export default async function HomePage() {
             const severity = severityCopy[report.severity]
 
             return (
-              <article className="lb-home__report-card" key={report.id}>
+              <Link className="lb-home__report-card" href={`/laporan/${report.slug}`} key={report.id}>
                 <div className={`lb-home__report-rail lb-home__report-rail--${severity.tone}`} />
                 <div className="lb-home__report-head">
                   <div className="lb-home__report-title-row">
                     <div className="lb-home__report-thumb">
                       {report.photoUrls[0] ? (
-                        <Image alt={report.title} src={report.photoUrls[0]} />
+                        <Image alt={report.title} src={report.photoUrls[0]} fill sizes="64px" style={{ objectFit: 'cover' }} />
                       ) : (
                         <div className="lb-home__report-thumb-fallback">LB</div>
                       )}
@@ -219,7 +280,7 @@ export default async function HomePage() {
                     </p>
                   </div>
                 </div>
-              </article>
+              </Link>
             )
           })}
         </div>
@@ -242,41 +303,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="lb-home__globe-card">
-          <div className="lb-home__globe-bg">
-            <div className="lb-home__globe-sphere">
-              <div className="lb-home__globe-dots" />
-              <div className="lb-home__incident lb-home__incident--teal" style={{ left: '45%', top: '30%' }}>
-                <span />
-              </div>
-              <div className="lb-home__incident lb-home__incident--amber" style={{ left: '20%', top: '60%' }}>
-                <span />
-              </div>
-              <div className="lb-home__incident lb-home__incident--red" style={{ left: '75%', top: '45%' }}>
-                <span />
-              </div>
-              <div className="lb-home__incident lb-home__incident--teal" style={{ left: '80%', top: '20%' }}>
-                <span />
-              </div>
-              <div className="lb-home__arc lb-home__arc--one" />
-              <div className="lb-home__arc lb-home__arc--two" />
-            </div>
-
-            <div className="lb-home__hud lb-home__hud--left">
-              <div className="lb-home__hud-dot" />
-              <div>
-                <strong>3D GLOBAL CORE ACTIVE</strong>
-                <small>NODES ONLINE 1,402</small>
-                <small>CRITICAL EVENTS 03</small>
-              </div>
-            </div>
-
-            <div className="lb-home__hud lb-home__hud--right">
-              <strong>Global Alert</strong>
-              <small>Anomaly in Sector 7-G</small>
-            </div>
-          </div>
-        </div>
+        <LautBersihGlobe reports={reports} />
       </section>
 
       <footer className="lb-home__footer">

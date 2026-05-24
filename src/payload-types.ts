@@ -71,6 +71,8 @@ export interface Config {
     media: Media;
     'waste-categories': WasteCategory;
     reports: Report;
+    'blog-posts': BlogPost;
+    partners: Partner;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +84,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     'waste-categories': WasteCategoriesSelect<false> | WasteCategoriesSelect<true>;
     reports: ReportsSelect<false> | ReportsSelect<true>;
+    'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
+    partners: PartnersSelect<false> | PartnersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -133,6 +137,10 @@ export interface User {
   id: number;
   fullName: string;
   role: 'admin' | 'reporter';
+  phone?: string | null;
+  organization?: string | null;
+  avatarUrl?: string | null;
+  avatarPublicId?: string | null;
   verifiedVolunteer?: boolean | null;
   points?: number | null;
   updatedAt: string;
@@ -161,6 +169,11 @@ export interface User {
 export interface Media {
   id: number;
   alt: string;
+  /**
+   * URL gambar yang tersimpan di Cloudinary.
+   */
+  cloudinaryUrl?: string | null;
+  cloudinaryPublicId?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -187,26 +200,41 @@ export interface WasteCategory {
   createdAt: string;
 }
 /**
+ * Kelola laporan pencemaran pesisir. Ubah Status Penanganan untuk memperbarui progress laporan yang terlihat oleh pelapor.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "reports".
  */
 export interface Report {
   id: number;
+  /**
+   * ⬆ Ubah status ini untuk memperbarui progress laporan di halaman publik.
+   */
+  status: 'pending_review' | 'validated' | 'rejected' | 'in_progress' | 'resolved';
+  severity: 'low' | 'medium' | 'critical';
+  /**
+   * Catatan internal tim — tidak ditampilkan ke publik.
+   */
+  adminNotes?: string | null;
   title: string;
+  /**
+   * URL-friendly identifier, di-generate otomatis.
+   */
   slug: string;
   locationLabel: string;
   latitude: number;
   longitude: number;
   description: string;
+  estimatedVolume?: ('small' | 'medium' | 'large' | 'very_large') | null;
   photos?: (number | Media)[] | null;
   category?: (number | null) | WasteCategory;
-  severity: 'low' | 'medium' | 'critical';
-  status: 'pending_review' | 'validated' | 'rejected' | 'in_progress' | 'resolved';
-  estimatedVolume?: ('small' | 'medium' | 'large' | 'very_large') | null;
   reporterName: string;
   reporterEmail?: string | null;
   reportedBy?: (number | null) | User;
   submittedAt: string;
+  /**
+   * Hasil analisis otomatis. Admin dapat mengedit ringkasan dan rekomendasi setelah verifikasi.
+   */
   aiAnalysis?: {
     summary?: string | null;
     confidence?: number | null;
@@ -217,7 +245,71 @@ export interface Report {
         }[]
       | null;
   };
-  adminNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Artikel berita yang di-generate otomatis dari laporan pencemaran. Bisa diedit dan dipublikasi oleh admin.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-posts".
+ */
+export interface BlogPost {
+  id: number;
+  title: string;
+  /**
+   * Di-generate otomatis dari judul dan tanggal.
+   */
+  slug: string;
+  /**
+   * Tampil di halaman daftar berita.
+   */
+  excerpt?: string | null;
+  /**
+   * Di-generate otomatis sebagai HTML. Admin bisa mengedit langsung.
+   */
+  content: string;
+  coverImage?: (number | null) | Media;
+  category?: (number | null) | WasteCategory;
+  /**
+   * Laporan yang men-trigger pembuatan artikel ini.
+   */
+  sourceReport?: (number | null) | Report;
+  locationLabel?: string | null;
+  severity?: ('low' | 'medium' | 'critical') | null;
+  publishedAt: string;
+  /**
+   * Tandai jika artikel ini dibuat otomatis oleh AI.
+   */
+  isAiGenerated?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Daftar partner/institusi yang dipercayai (untuk ditampilkan di halaman home)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners".
+ */
+export interface Partner {
+  id: number;
+  name: string;
+  /**
+   * Upload logo partner (SVG atau PNG dengan background transparan)
+   */
+  logo: number | Media;
+  /**
+   * Link website partner (opsional)
+   */
+  website?: string | null;
+  /**
+   * Urutan tampilan (semakin kecil semakin awal)
+   */
+  order?: number | null;
+  /**
+   * Tampilkan di halaman home
+   */
+  isActive?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -260,6 +352,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'reports';
         value: number | Report;
+      } | null)
+    | ({
+        relationTo: 'blog-posts';
+        value: number | BlogPost;
+      } | null)
+    | ({
+        relationTo: 'partners';
+        value: number | Partner;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -310,6 +410,10 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   fullName?: T;
   role?: T;
+  phone?: T;
+  organization?: T;
+  avatarUrl?: T;
+  avatarPublicId?: T;
   verifiedVolunteer?: T;
   points?: T;
   updatedAt?: T;
@@ -335,6 +439,8 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  cloudinaryUrl?: T;
+  cloudinaryPublicId?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -364,17 +470,18 @@ export interface WasteCategoriesSelect<T extends boolean = true> {
  * via the `definition` "reports_select".
  */
 export interface ReportsSelect<T extends boolean = true> {
+  status?: T;
+  severity?: T;
+  adminNotes?: T;
   title?: T;
   slug?: T;
   locationLabel?: T;
   latitude?: T;
   longitude?: T;
   description?: T;
+  estimatedVolume?: T;
   photos?: T;
   category?: T;
-  severity?: T;
-  status?: T;
-  estimatedVolume?: T;
   reporterName?: T;
   reporterEmail?: T;
   reportedBy?: T;
@@ -391,7 +498,38 @@ export interface ReportsSelect<T extends boolean = true> {
               id?: T;
             };
       };
-  adminNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-posts_select".
+ */
+export interface BlogPostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  content?: T;
+  coverImage?: T;
+  category?: T;
+  sourceReport?: T;
+  locationLabel?: T;
+  severity?: T;
+  publishedAt?: T;
+  isAiGenerated?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners_select".
+ */
+export interface PartnersSelect<T extends boolean = true> {
+  name?: T;
+  logo?: T;
+  website?: T;
+  order?: T;
+  isActive?: T;
   updatedAt?: T;
   createdAt?: T;
 }

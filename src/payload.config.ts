@@ -5,6 +5,8 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
+import { BlogPosts } from './collections/BlogPosts'
+import { Partners } from './collections/Partners'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Reports } from './collections/Reports'
@@ -21,7 +23,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, WasteCategories, Reports],
+  collections: [Users, Media, WasteCategories, Reports, BlogPosts, Partners],
   editor: lexicalEditor(),
   globals: [SiteSettings],
   secret: process.env.PAYLOAD_SECRET || '',
@@ -30,7 +32,10 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: (process.env.DATABASE_URL || '').replace(
+        /sslmode=(prefer|require|verify-ca)/,
+        'sslmode=verify-full',
+      ),
     },
   }),
   sharp,

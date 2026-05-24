@@ -1,0 +1,189 @@
+/* ─── Leaflet Global Overrides ───────────────────────────────────── */
+
+.leaflet-container {
+  background: #a8c8e8 !important;
+  font-family: var(--font-dm-sans), sans-serif !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(11, 37, 64, 0.55) !important;
+  font-size: 0.65rem !important;
+}
+
+.leaflet-control-attribution a { color: rgba(11, 37, 64, 0.65) !important; }
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(11, 37, 64, 0.15) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(11, 37, 64, 0.15) !important;
+  overflow: hidden;
+
+  a {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid rgba(11, 37, 64, 0.1) !important;
+    color: var(--lb-primary) !important;
+    font-size: 1rem !important;
+    line-height: 28px !important;
+
+    &:hover {
+      background: var(--lb-secondary) !important;
+      color: #fff !important;
+    }
+  }
+}
+
+/* ─── Custom Map Dot Markers ─────────────────────────────────────── */
+
+.lb-map-dot {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 200ms ease;
+
+  &--critical {
+    background: #e24b4a;
+    box-shadow: 0 0 0 3px rgba(226, 75, 74, 0.3);
+  }
+
+  &--medium {
+    background: #ef9f27;
+    box-shadow: 0 0 0 3px rgba(239, 159, 39, 0.3);
+  }
+
+  &--low {
+    background: #1d9e75;
+    box-shadow: 0 0 0 3px rgba(29, 158, 117, 0.3);
+  }
+
+  &--selected {
+    border-width: 3px;
+    box-shadow:
+      0 0 0 5px rgba(255, 255, 255, 0.25),
+      0 4px 20px rgba(0, 0, 0, 0.4);
+    transform: scale(1.2);
+  }
+
+  &--pulse { animation: lb-map-pulse 1.8s ease-out infinite; }
+}
+
+/* ─── Map Tooltip ────────────────────────────────────────────────── */
+
+.lb-map-tooltip {
+  background: rgba(8, 27, 46, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  padding: 0 !important;
+
+  &::before { display: none !important; }
+}
+
+.lb-map-tooltip-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+
+  strong { color: #fff; font-size: 0.82rem; font-weight: 700; }
+
+  span { color: rgba(245, 248, 251, 0.55); font-size: 0.72rem; }
+}
+
+/* ─── Coordinate Picker Pin ──────────────────────────────────────── */
+
+.lb-map-pin {
+  background: var(--lb-secondary);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px rgba(29, 158, 117, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  height: 20px;
+  width: 20px;
+}
+
+/* ─── Monitoring Map Loading ─────────────────────────────────────── */
+
+.lb-monitoring__map-loading {
+  align-items: center;
+  background: #a8c8e8;
+  color: rgba(11, 37, 64, 0.5);
+  display: flex;
+  font-size: 0.85rem;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+/* ─── Monitoring Sidebar Legend ──────────────────────────────────── */
+
+.lb-monitoring__map-legend {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin-top: 8px;
+  padding-top: 16px;
+
+  h4 {
+    color: rgba(245, 248, 251, 0.45);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  > div {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  p { color: rgba(245, 248, 251, 0.65); font-size: 0.8rem; }
+}
+
+/* ─── Severity Stat Text Colors ──────────────────────────────────── */
+
+.is-critical-text { color: #e24b4a; }
+.is-medium-text   { color: #ef9f27; }
+.is-low-text      { color: #1d9e75; }
+
+/* ─── Report Form Interactive Map Preview ────────────────────────── */
+
+.lb-reporting-map-preview--interactive {
+  cursor: crosshair;
+  overflow: hidden;
+
+  .leaflet-container {
+    border-radius: 10px;
+    height: 100% !important;
+  }
+}
+
+.lb-reporting-map-preview__hint {
+  align-items: center;
+  background: rgba(8, 27, 46, 0.75);
+  border-radius: 999px;
+  bottom: 12px;
+  color: rgba(245, 248, 251, 0.85);
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 6px;
+  left: 50%;
+  padding: 6px 14px;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 1000;
+
+  i {
+    animation: lb-home-dot-pulse 1.5s ease-in-out infinite;
+    background: var(--lb-secondary);
+    border-radius: 50%;
+    display: inline-block;
+    height: 7px;
+    width: 7px;
+  }
+}

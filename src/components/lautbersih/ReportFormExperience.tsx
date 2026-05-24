@@ -1,7 +1,14 @@
 'use client'
 
-import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useRef, useState, useTransition } from 'react'
+
+import { analyzePhotoComplete, analyzeWithGemini } from '@/app/(frontend)/lapor/analyze'
+
+const LeafletMapPicker = dynamic(
+  () => import('./LeafletMapPicker').then((m) => ({ default: m.LeafletMapPicker })),
+  { ssr: false },
+)
 
 type FormCategory = {
   id: string
@@ -77,6 +84,31 @@ const pickAnalysisKey = (label: string) => {
   return 'default'
 }
 
+const compressImageToBase64 = (file: File, maxDim: number, quality: number): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const ratio = Math.min(1, maxDim / Math.max(img.width, img.height))
+        const w = Math.round(img.width * ratio)
+        const h = Math.round(img.height * ratio)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject(new Error('Canvas tidak didukung.'))
+        ctx.drawImage(img, 0, 0, w, h)
+        const dataUrl = canvas.toDataURL('image/jpeg', quality)
+        resolve(dataUrl.split(',')[1] ?? '')
+      }
+      img.onerror = () => reject(new Error('Foto tidak dapat dibaca.'))
+      img.src = reader.result as string
+    }
+    reader.onerror = () => reject(new Error('Gagal membaca foto.'))
+    reader.readAsDataURL(file)
+  })
+
 const parseCoordinates = (value: string) => {
   const parts = value
     .split(',')
@@ -101,25 +133,68 @@ export const ReportFormExperience = ({
 }) => {
   const chips = categories.length > 0 ? categories.slice(0, 5) : fallbackCategories
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const STORAGE_KEY = 'lb_report_draft'
 
   const [selectedCategory, setSelectedCategory] = useState<FormCategory | null>(null)
   const [title, setTitle] = useState('')
   const [coordinates, setCoordinates] = useState('')
   const [description, setDescription] = useState('')
+  const [photos, setPhotos] = useState<File[]>([])
+  const [genDescError, setGenDescError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isAiPending, startAiTransition] = useTransition()
+  const [isGenPending, startGenTransition] = useTransition()
+
+  // Restore draft from sessionStorage on first mount
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw) as {
+        title?: string
+        coordinates?: string
+        description?: string
+        selectedCategory?: FormCategory | null
+      }
+      if (draft.title) setTitle(draft.title)
+      if (draft.coordinates) setCoordinates(draft.coordinates)
+      if (draft.description) setDescription(draft.description)
+      if (draft.selectedCategory) setSelectedCategory(draft.selectedCategory)
+    } catch {
+      // ignore malformed storage
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save draft to sessionStorage whenever form values change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ title, coordinates, description, selectedCategory }),
+      )
+    } catch {
+      // ignore storage errors (e.g. private mode full)
+    }
+  }, [title, coordinates, description, selectedCategory])
+
   const [analysisState, setAnalysisState] = useState<{
     categoryLabel: string
     confidence: string
+    error: string | null
     items: string[]
-    phase: 'idle' | 'loading' | 'ready'
+    phase: 'idle' | 'loading' | 'ready' | 'error'
     severity: string
     severityTone: 'critical' | 'moderate' | 'safe'
+    summary: string | null
   }>({
     categoryLabel: '-',
     confidence: '0%',
+    error: null,
     items: [],
     phase: 'idle',
     severity: 'MENGANALISIS...',
     severityTone: 'safe',
+    summary: null,
   })
 
   useEffect(() => {
@@ -130,32 +205,48 @@ export const ReportFormExperience = ({
     }
   }, [])
 
-  const startAnalysis = (label: string) => {
-    const profile = analysisProfiles[pickAnalysisKey(label)]
+  const startAnalysis = (categoryLabel: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current)
 
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-    }
-
-    setAnalysisState({
-      categoryLabel: label,
+    setAnalysisState((prev) => ({
+      ...prev,
+      categoryLabel,
       confidence: '0%',
+      error: null,
       items: [],
       phase: 'loading',
       severity: 'MENGANALISIS...',
       severityTone: 'safe',
-    })
+      summary: null,
+    }))
 
-    timerRef.current = setTimeout(() => {
-      setAnalysisState({
-        categoryLabel: label,
-        confidence: profile.confidence,
-        items: [...profile.items],
-        phase: 'ready',
-        severity: profile.severity,
-        severityTone: profile.severityTone,
-      })
-    }, 1500)
+    startAiTransition(async () => {
+      try {
+        const result = await analyzeWithGemini({
+          title,
+          category: categoryLabel,
+          description,
+          coordinates,
+        })
+        setAnalysisState({
+          categoryLabel: result.categoryLabel,
+          confidence: result.confidence,
+          error: null,
+          items: result.recommendations,
+          phase: 'ready',
+          severity: result.severity,
+          severityTone: result.severityTone,
+          summary: result.summary,
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Gagal terhubung ke AI.'
+        setAnalysisState((prev) => ({
+          ...prev,
+          error: msg,
+          phase: 'error',
+        }))
+      }
+    })
   }
 
   const onCategoryClick = (category: FormCategory) => {
@@ -165,37 +256,105 @@ export const ReportFormExperience = ({
 
   const onDescriptionChange = (value: string) => {
     setDescription(value)
+  }
 
-    if (value.length >= 25 && !selectedCategory && analysisState.phase === 'idle') {
-      startAnalysis('Ecosystem Damage')
-    }
+  const onPhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : []
+    setPhotos(files)
+  }
+
+  const onGenerateDescription = () => {
+    const file = photos[0]
+    if (!file) return
+    setGenDescError(null)
+
+    startGenTransition(async () => {
+      try {
+        // Downscale & re-encode to JPEG (max 1024px) to shrink payload ~10x
+        const base64 = await compressImageToBase64(file, 1024, 0.82)
+
+        // Set sidebar to loading immediately
+        setAnalysisState((prev) => ({
+          ...prev,
+          confidence: '0%',
+          error: null,
+          items: [],
+          phase: 'loading',
+          severity: 'MENGANALISIS...',
+          severityTone: 'safe',
+          summary: null,
+        }))
+
+        // Single combined Gemini Vision call (description + analysis in one shot)
+        const result = await analyzePhotoComplete({
+          photoBase64: base64,
+          mimeType: 'image/jpeg',
+          title,
+          coordinates,
+        })
+
+        setDescription(result.description)
+
+        // Auto-match AI category to one of the available chips
+        const aiCatNorm = result.categoryLabel.toLowerCase()
+        const matchedChip = chips.find((c) => {
+          const t = c.title.toLowerCase()
+          if (aiCatNorm.includes('plastik') || aiCatNorm.includes('sampah') || aiCatNorm.includes('debris') || aiCatNorm.includes('waste'))
+            return t.includes('plastik') || t.includes('sampah') || t.includes('debris') || t.includes('waste')
+          if (aiCatNorm.includes('minyak') || aiCatNorm.includes('oil'))
+            return t.includes('minyak') || t.includes('oil')
+          if (aiCatNorm.includes('industri') || aiCatNorm.includes('limbah'))
+            return t.includes('industri') || t.includes('limbah')
+          if (aiCatNorm.includes('ekosistem') || aiCatNorm.includes('karang') || aiCatNorm.includes('ecosystem'))
+            return t.includes('ekosistem') || t.includes('karang') || t.includes('ecosystem')
+          if (aiCatNorm.includes('ilegal') || aiCatNorm.includes('illegal'))
+            return t.includes('ilegal') || t.includes('illegal')
+          return false
+        })
+        if (matchedChip) setSelectedCategory(matchedChip)
+
+        setAnalysisState({
+          categoryLabel: result.categoryLabel,
+          confidence: result.confidence,
+          error: null,
+          items: result.recommendations,
+          phase: 'ready',
+          severity: result.severity,
+          severityTone: result.severityTone,
+          summary: result.summary,
+        })
+      } catch (err) {
+        setGenDescError(err instanceof Error ? err.message : 'Gagal analisis foto.')
+        setAnalysisState((prev) => ({
+          ...prev,
+          error: err instanceof Error ? err.message : 'Gagal analisis foto.',
+          phase: 'error',
+        }))
+      }
+    })
+  }
+
+  const onManualScan = () => {
+    const label = selectedCategory?.title ?? (description.length > 0 ? 'Insiden Maritim' : '')
+    if (!label && !title && !description) return
+    startAnalysis(label || title || 'Insiden Maritim')
   }
 
   const parsedCoordinates = parseCoordinates(coordinates)
+
+  const pickerCoords = (() => {
+    const parts = coordinates.split(',').map((s) => Number(s.trim()))
+    if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+      return { latitude: parts[0], longitude: parts[1] }
+    }
+    return null
+  })()
+
   const locationLabel = coordinates ? `Koordinat ${coordinates}` : title || 'Titik Laporan LautBersih'
   const confidenceWidth = analysisState.phase === 'ready' ? analysisState.confidence : '0%'
 
   return (
     <div className="lb-reporting-page">
-      <nav className="lb-reporting-nav">
-        <div className="lb-reporting-nav__inner">
-          <div className="lb-reporting-nav__brand-group">
-            <Link className="lb-reporting-nav__brand" href="/">
-              LautBersih
-            </Link>
-            <div className="lb-reporting-nav__links">
-              <Link href="/dashboard">Dashboard</Link>
-              <Link href="/profil">Armada</Link>
-              <Link href="/petawilayah">Peta Wilayah</Link>
-              <Link href="/lapor">Dokumen</Link>
-            </div>
-          </div>
-          <Link className="lb-reporting-nav__cta" href="/lapor">
-            Buat Laporan
-          </Link>
-        </div>
-      </nav>
-
       <header className="lb-reporting-hero">
         <div className="lb-reporting-hero__inner">
           <div className="lb-reporting-sdg">SDG 14 · Life Below Water</div>
@@ -210,13 +369,41 @@ export const ReportFormExperience = ({
       <main className="lb-reporting-main">
         <div className="lb-reporting-grid">
           <section className="lb-reporting-form-card">
-            <form action={submitAction} className="lb-reporting-form">
+            <form
+              action={async (fd) => {
+                setSubmitError(null)
+
+                // Validation: koordinat wajib diatur (bukan default)
+                if (!coordinates.trim()) {
+                  setSubmitError(
+                    'Lokasi pada peta belum diatur. Silakan klik peta untuk memilih titik lokasi atau isi koordinat secara manual.',
+                  )
+                  return
+                }
+                const parts = coordinates.split(',').map((s) => Number(s.trim()))
+                if (parts.length !== 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+                  setSubmitError('Format koordinat tidak valid. Contoh: -6.1751, 106.8272')
+                  return
+                }
+
+                sessionStorage.removeItem(STORAGE_KEY)
+                await submitAction(fd)
+              }}
+              className="lb-reporting-form"
+            >
               <input name="category" type="hidden" value={selectedCategory?.id || ''} />
               <input name="latitude" type="hidden" value={String(parsedCoordinates.latitude)} />
               <input name="longitude" type="hidden" value={String(parsedCoordinates.longitude)} />
               <input name="locationLabel" type="hidden" value={locationLabel} />
               <input name="reporterName" type="hidden" value="Pelapor LautBersih" />
               <input name="reporterEmail" type="hidden" value="" />
+              {/* AI analysis result — sent to server only when ready */}
+              <input name="aiSeverityTone" type="hidden" value={analysisState.phase === 'ready' ? analysisState.severityTone : ''} />
+              <input name="aiSeverityLabel" type="hidden" value={analysisState.phase === 'ready' ? analysisState.severity : ''} />
+              <input name="aiCategoryLabel" type="hidden" value={analysisState.phase === 'ready' ? analysisState.categoryLabel : ''} />
+              <input name="aiConfidence" type="hidden" value={analysisState.phase === 'ready' ? analysisState.confidence : ''} />
+              <input name="aiSummary" type="hidden" value={analysisState.phase === 'ready' ? (analysisState.summary ?? '') : ''} />
+              <input name="aiRecommendations" type="hidden" value={analysisState.phase === 'ready' ? JSON.stringify(analysisState.items) : ''} />
 
               <div className="lb-reporting-field">
                 <label htmlFor="report-title">Judul Laporan</label>
@@ -275,16 +462,15 @@ export const ReportFormExperience = ({
                 </div>
               </div>
 
-              <div className="lb-reporting-map-preview">
-                <img
-                  alt="Map View"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1BX1GlBdP3QXOuvyBkheuthy4CPwRrx-1Nx35IkqH4jVHaxfO87MDsIroLlzNsOWAn-FfMpgIdoUp-VL-bQGzK901qQ8EGxwSq1tTk6nrClng_gMHZNjQikY-r4lAmleY9pmjSgCkz2at9EuP62BFtd2P8AHadoLmRGIEAvI5BEETs-G7lNYbUzJcJQb60bxXMTS3Ig0ANvPFjHfhsi-sTjWff60PIEBzo_28jLCeDzzKcY2AHkeHX600y92H3LtAyvtPbWQFcA"
+              <div className="lb-reporting-map-preview lb-reporting-map-preview--interactive">
+                <LeafletMapPicker
+                  latitude={pickerCoords?.latitude}
+                  longitude={pickerCoords?.longitude}
+                  onChange={(lat, lng) => setCoordinates(`${lat}, ${lng}`)}
                 />
-                <div className="lb-reporting-map-preview__overlay">
-                  <span className="lb-reporting-map-preview__pill">
-                    <i />
-                    Preview Peta Aktif
-                  </span>
+                <div className="lb-reporting-map-preview__hint">
+                  <i />
+                  Klik peta untuk pilih koordinat
                 </div>
               </div>
 
@@ -308,9 +494,32 @@ export const ReportFormExperience = ({
                   id="report-photos"
                   multiple
                   name="photos"
+                  onChange={onPhotosChange}
                   type="file"
                 />
+                <button
+                  className={`lb-reporting-gen-btn${isGenPending ? ' is-loading' : ''}`}
+                  disabled={photos.length === 0 || isGenPending}
+                  onClick={onGenerateDescription}
+                  type="button"
+                >
+                  {isGenPending ? (
+                    <><span className="lb-reporting-gen-btn__spinner" /> Menganalisis foto...</>
+                  ) : (
+                    <>✦ Generate Deskripsi dari Foto</>
+                  )}
+                </button>
+                {genDescError && (
+                  <p className="lb-reporting-gen-btn__error">{genDescError}</p>
+                )}
               </div>
+
+              {submitError && (
+                <div className="lb-reporting-submit-error" role="alert">
+                  <span className="lb-reporting-submit-error__icon">⚠</span>
+                  <span>{submitError}</span>
+                </div>
+              )}
 
               <button className="lb-reporting-submit" type="submit">
                 Kirim Laporan
@@ -318,7 +527,7 @@ export const ReportFormExperience = ({
             </form>
           </section>
 
-          <aside className="lb-reporting-sidebar">
+            <aside className="lb-reporting-sidebar">
             <div className="lb-reporting-ai-card">
               <div className="lb-reporting-ai-card__scanline" />
               <div className="lb-reporting-ai-card__head">
@@ -329,35 +538,62 @@ export const ReportFormExperience = ({
                 </div>
               </div>
 
-              {analysisState.phase !== 'ready' ? (
+              {analysisState.phase === 'idle' && (
                 <div className="lb-reporting-ai-card__status">
-                  {analysisState.phase === 'loading' ? (
-                    <>
-                      <div className="lb-reporting-spinner" />
-                      <div className="lb-reporting-spinner-copy">
-                        <p>Scanning Intelligence...</p>
-                        <small>Cross-referencing satellite data</small>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="lb-reporting-ai-skeleton">
-                        <div className="lb-reporting-ai-skeleton__line" />
-                        <div className="lb-reporting-ai-skeleton__grid">
-                          <div />
-                          <div />
-                          <div />
-                        </div>
-                        <div className="lb-reporting-ai-skeleton__panel" />
-                      </div>
-                      <p className="lb-reporting-ai-card__idle">
-                        Menunggu input data untuk memulai pemindaian sistem...
-                      </p>
-                    </>
-                  )}
+                  <div className="lb-reporting-ai-skeleton">
+                    <div className="lb-reporting-ai-skeleton__line" />
+                    <div className="lb-reporting-ai-skeleton__grid">
+                      <div />
+                      <div />
+                      <div />
+                    </div>
+                    <div className="lb-reporting-ai-skeleton__panel" />
+                  </div>
+                  <p className="lb-reporting-ai-card__idle">
+                    Pilih kategori atau klik Scan AI untuk memulai pemindaian...
+                  </p>
+                  <button
+                    className="lb-reporting-ai-scan-btn"
+                    disabled={isAiPending || (!title && !description)}
+                    onClick={onManualScan}
+                    type="button"
+                  >
+                    <span>⚡</span> Scan AI Sekarang
+                  </button>
                 </div>
-              ) : (
+              )}
+
+              {(analysisState.phase === 'loading' || isAiPending) && (
+                <div className="lb-reporting-ai-card__status">
+                  <div className="lb-reporting-spinner" />
+                  <div className="lb-reporting-spinner-copy">
+                    <p>Scanning Intelligence...</p>
+                    <small>Menganalisis dengan Gemini AI...</small>
+                  </div>
+                </div>
+              )}
+
+              {analysisState.phase === 'error' && (
+                <div className="lb-reporting-ai-card__status">
+                  <p className="lb-reporting-ai-card__error">{analysisState.error}</p>
+                  <button
+                    className="lb-reporting-ai-scan-btn"
+                    onClick={onManualScan}
+                    type="button"
+                  >
+                    <span>↺</span> Coba Lagi
+                  </button>
+                </div>
+              )}
+
+              {analysisState.phase === 'ready' && !isAiPending && (
                 <div className="lb-reporting-ai-card__results">
+                  {analysisState.summary && (
+                    <div className="lb-reporting-ai-card__summary">
+                      <p>{analysisState.summary}</p>
+                    </div>
+                  )}
+
                   <div className="lb-reporting-ai-card__meta-grid">
                     <div>
                       <p>Kategori</p>
@@ -397,6 +633,15 @@ export const ReportFormExperience = ({
                       <div style={{ width: confidenceWidth }} />
                     </div>
                   </div>
+
+                  <button
+                    className="lb-reporting-ai-scan-btn lb-reporting-ai-scan-btn--rescan"
+                    disabled={isAiPending}
+                    onClick={onManualScan}
+                    type="button"
+                  >
+                    <span>↺</span> Re-scan
+                  </button>
                 </div>
               )}
             </div>
@@ -427,45 +672,6 @@ export const ReportFormExperience = ({
         </div>
       </main>
 
-      <footer className="lb-reporting-footer">
-        <div className="lb-reporting-footer__inner">
-          <div className="lb-reporting-footer__top">
-            <div className="lb-reporting-footer__brand-col">
-              <span className="lb-reporting-footer__brand">LautBersih</span>
-              <p>
-                Otoritas Maritim LautBersih berkomitmen untuk menjaga kedaulatan dan kebersihan
-                perairan Indonesia melalui teknologi monitoring terpadu.
-              </p>
-            </div>
-
-            <div className="lb-reporting-footer__links-grid">
-              <div>
-                <p>Informasi</p>
-                <Link href="/profil">Tentang Kami</Link>
-                <Link href="/profil">Visi & Misi</Link>
-              </div>
-              <div>
-                <p>Layanan</p>
-                <Link href="/dashboard">Akses Armada</Link>
-                <Link href="/dashboard">Open Data</Link>
-              </div>
-              <div>
-                <p>Kontak</p>
-                <Link href="/notifikasi">Pusat Bantuan</Link>
-                <Link href="/notifikasi">Media Center</Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="lb-reporting-footer__bottom">
-            <p>© 2024 LautBersih Maritime Authority. All Rights Reserved.</p>
-            <div>
-              <Link href="/profil">Kebijakan Privasi</Link>
-              <Link href="/profil">Syarat & Ketentuan</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

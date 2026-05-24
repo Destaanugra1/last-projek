@@ -4,6 +4,8 @@ import { getPayloadClient } from '@/lib/getPayloadClient'
 type RelationDoc = {
   id?: number | string
   alt?: string | null
+  cloudinaryUrl?: string | null
+  cloudinaryPublicId?: string | null
   color?: string | null
   filename?: string | null
   title?: string | null
@@ -104,6 +106,10 @@ const statusLabels: Record<FrontendReport['status'], string> = {
 const normalizeMediaURL = (relation: RelationDoc | number | string): string | null => {
   if (!relation || typeof relation === 'number' || typeof relation === 'string') {
     return null
+  }
+
+  if (relation.cloudinaryUrl) {
+    return relation.cloudinaryUrl
   }
 
   if (relation.url) {

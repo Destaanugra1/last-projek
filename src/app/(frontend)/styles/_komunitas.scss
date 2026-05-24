@@ -1,0 +1,325 @@
+/* ─── Komunitas Page (clean editorial) ──────────────────────────── */
+
+/* ── Header ── */
+.lb-kom-header {
+  align-items: flex-end;
+  display: flex;
+  gap: 32px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 4px;
+
+  &__left {
+    h1 {
+      color: var(--lb-primary);
+      font-size: clamp(1.6rem, 2.5vw, 2.4rem);
+      margin-top: 6px;
+    }
+  }
+
+  &__stats {
+    display: flex;
+    flex-shrink: 0;
+    gap: 36px;
+  }
+}
+
+.lb-kom-stat {
+  text-align: right;
+
+  span {
+    color: var(--lb-primary);
+    display: block;
+    font-family: var(--font-dm-serif), Georgia, serif;
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  p {
+    color: var(--lb-text-soft);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+    text-transform: uppercase;
+  }
+}
+
+/* ── Divider ── */
+.lb-kom-divider {
+  background: rgba(11, 37, 64, 0.09);
+  border: none;
+  height: 1px;
+  margin-bottom: 28px;
+  width: 100%;
+}
+
+/* ── Two-column body ── */
+.lb-kom-body {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.lb-kom-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  &__head {
+    align-items: baseline;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(11, 37, 64, 0.07);
+
+    h2 {
+      color: var(--lb-primary);
+      font-family: var(--font-dm-sans), sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    span,
+    a {
+      color: var(--lb-text-soft);
+      font-size: 0.75rem;
+    }
+  }
+}
+
+/* ── Leaderboard ── */
+.lb-kom-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  &__row {
+    align-items: center;
+    border-bottom: 1px solid rgba(11, 37, 64, 0.05);
+    display: flex;
+    gap: 14px;
+    padding: 12px 4px;
+    transition: background 120ms ease;
+
+    &:last-child { border-bottom: none; }
+
+    &:hover { background: rgba(11, 37, 64, 0.02); }
+
+    &.is-featured {
+      .lb-kom-board__num { color: var(--lb-secondary); font-weight: 800; }
+    }
+  }
+
+  &__num {
+    color: rgba(11, 37, 64, 0.25);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  &__avatar {
+    align-items: center;
+    background: rgba(11, 37, 64, 0.07);
+    border-radius: 50%;
+    color: var(--lb-primary);
+    display: flex;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    font-weight: 800;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      color: var(--lb-primary);
+      display: block;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      color: var(--lb-text-soft);
+      font-size: 0.7rem;
+    }
+  }
+
+  &__score {
+    color: var(--lb-secondary);
+    flex-shrink: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    min-width: 28px;
+    text-align: right;
+  }
+}
+
+/* ── Activity Feed ── */
+.lb-kom-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lb-kom-feed__row {
+  align-items: center;
+  border-bottom: 1px solid rgba(11, 37, 64, 0.05);
+  display: flex;
+  gap: 12px;
+  padding: 11px 4px;
+  text-decoration: none;
+  transition: background 120ms ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(11, 37, 64, 0.02); }
+}
+
+.lb-kom-feed__dot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 7px;
+  opacity: 0.75;
+  width: 7px;
+}
+
+.lb-kom-feed__content {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    color: var(--lb-primary);
+    display: block;
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    color: var(--lb-text-soft);
+    font-size: 0.72rem;
+  }
+}
+
+.lb-kom-feed__meta {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.lb-kom-feed__sev {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.lb-kom-feed__meta time {
+  color: var(--lb-text-soft);
+  font-size: 0.7rem;
+}
+
+/* ── Categories ── */
+.lb-kom-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lb-kom-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__top {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+
+    span:first-child {
+      color: var(--lb-text);
+      font-size: 0.82rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span:last-child {
+      color: var(--lb-text-soft);
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+  }
+
+  &__track {
+    background: rgba(11, 37, 64, 0.07);
+    border-radius: 999px;
+    height: 4px;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  &__fill {
+    background: var(--lb-secondary);
+    border-radius: 999px;
+    height: 100%;
+    min-width: 4px;
+    opacity: 0.7;
+    transition: width 500ms ease;
+  }
+}
+
+/* ── Footer CTA ── */
+.lb-kom-cta {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+
+  h3 {
+    color: var(--lb-primary);
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+
+  p {
+    color: var(--lb-text-soft);
+    font-size: 0.875rem;
+  }
+}
+
+/* ── Empty state ── */
+.lb-kom-empty {
+  color: var(--lb-text-soft);
+  font-size: 0.875rem;
+  padding: 16px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .lb-kom-body   { grid-template-columns: 1fr; }
+  .lb-kom-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .lb-kom-stat   { text-align: left; }
+  .lb-kom-cta    { flex-direction: column; align-items: flex-start; }
+}

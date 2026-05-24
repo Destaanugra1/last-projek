@@ -1,0 +1,345 @@
+/* ─── Responsive Breakpoints ─────────────────────────────────────── */
+
+@media (max-width: 1280px) {
+  .lb-home__reports-grid,
+  .lb-home__map-section,
+  .lb-app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-sidebar {
+    height: auto;
+    position: static;
+  }
+
+  .lb-map-stage,
+  .lb-report-builder,
+  .lb-profile-hero,
+  .lb-hero,
+  .lb-detail-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-onboarding-grid,
+  .lb-profile-grid,
+  .lb-stats-grid,
+  .lb-dashboard-grid,
+  .lb-report-grid,
+  .lb-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lb-panel--wide { grid-column: auto; }
+
+  .lb-map-stage__insight { order: 3; }
+}
+
+@media (max-width: 980px) {
+  .lb-auth-split,
+  .lb-auth-register-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-auth-brand-panel,
+  .lb-auth-register-brand {
+    display: none;
+  }
+
+  .lb-auth-mobile-brand { display: flex; }
+
+  .lb-auth-form-panel,
+  .lb-auth-register-form-panel {
+    padding: 32px;
+  }
+
+  .lb-auth-footer__inner,
+  .lb-auth-topnav__inner {
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .lb-auth-footer__inner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-bottom: 20px;
+    padding-top: 20px;
+  }
+
+  .lb-auth-mobile-copy { display: block; }
+
+  .lb-auth-page__main { padding: 24px 16px; }
+
+  .lb-monitoring { overflow: auto; }
+
+  .lb-monitoring__nav {
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .lb-monitoring__brand-group,
+  .lb-monitoring__nav {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lb-monitoring__main {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .lb-monitoring__sidebar {
+    border-right: none;
+    border-top: 1px solid rgba(196, 198, 206, 0.2);
+    width: 100%;
+  }
+
+  .lb-monitoring__canvas-wrap { min-height: 70vh; }
+
+  .lb-monitoring__analysis {
+    top: auto;
+    width: 100%;
+  }
+
+  .lb-monitoring__legend,
+  .lb-monitoring__controls {
+    top: 16px;
+  }
+
+  .lb-monitoring__legend { right: 16px; }
+
+  .lb-monitoring__ticker { padding: 0 12px; }
+
+  .lb-reporting-nav__inner,
+  .lb-reporting-hero,
+  .lb-reporting-main,
+  .lb-reporting-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .lb-reporting-grid,
+  .lb-reporting-location-grid,
+  .lb-reporting-footer__top,
+  .lb-reporting-footer__bottom,
+  .lb-reporting-footer__links-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-reporting-nav__brand-group,
+  .lb-reporting-nav__inner,
+  .lb-reporting-footer__top,
+  .lb-reporting-footer__bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lb-reporting-nav__links { flex-wrap: wrap; }
+
+  .lb-reporting-ai-card { position: static; }
+
+  .lb-home__nav {
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .lb-home__brand-group,
+  .lb-home__section-head,
+  .lb-home__footer-grid {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lb-home__links,
+  .lb-home__hero-actions,
+  .lb-home__section-actions {
+    flex-wrap: wrap;
+  }
+
+  .lb-home__hero { padding: 156px 16px 148px; }
+
+  .lb-home__section,
+  .lb-home__map-section,
+  .lb-home__footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .lb-home__stats-grid,
+  .lb-home__reports-grid,
+  .lb-home__footer-links {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-home__stat-card + .lb-home__stat-card {
+    border-left: none;
+    border-top: 1px solid rgba(196, 198, 206, 0.2);
+  }
+
+  .lb-home__globe-card { height: 520px; }
+
+  .lb-home__globe-sphere { height: 360px; width: 360px; }
+
+  .lb-app-shell { padding: 16px 16px 94px; }
+
+  .lb-sidebar { display: none; }
+
+  .lb-topbar,
+  .lb-detail-hero__head,
+  .lb-map-card__head,
+  .lb-section__header,
+  .lb-onboarding-actions,
+  .lb-filter-group,
+  .lb-notification-card__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lb-onboarding-grid,
+  .lb-profile-grid,
+  .lb-stats-grid,
+  .lb-dashboard-grid,
+  .lb-report-grid,
+  .lb-kpi-row,
+  .lb-form-grid,
+  .lb-report-card dl,
+  .lb-detail-grid,
+  .lb-stepper,
+  .lb-monitor-stats,
+  .lb-insight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-report-card {
+    grid-template-columns: 1fr;
+
+    &::before {
+      height: 4px;
+      left: 14px;
+      top: 8px;
+      width: calc(100% - 28px);
+    }
+  }
+
+  .lb-bottom-nav { display: flex; }
+}
+
+@media (max-width: 640px) {
+  .lb-auth-topnav__links,
+  .lb-auth-footer__inner div {
+    display: none;
+  }
+
+  .lb-auth-form-panel,
+  .lb-auth-register-form-panel,
+  .lb-auth-page__main {
+    padding: 20px;
+  }
+
+  .lb-auth-form-wrap__header,
+  .lb-auth-form-wrap__header--register {
+    margin-bottom: 28px;
+  }
+
+  .lb-monitoring__links { display: none; }
+
+  .lb-monitoring__brand { font-size: 1.6rem; }
+
+  .lb-monitoring__sidebar-head,
+  .lb-monitoring__sidebar-body,
+  .lb-monitoring__sdg,
+  .lb-monitoring__analysis-inner {
+    padding: 18px;
+  }
+
+  .lb-monitoring__legend { width: 170px; }
+
+  .lb-monitoring__ticker-live,
+  .lb-monitoring__ticker-status {
+    display: none;
+  }
+
+  .lb-monitoring__fab { bottom: 52px; right: 16px; }
+
+  .lb-reporting-nav__links { display: none; }
+
+  .lb-reporting-nav__brand,
+  .lb-reporting-footer__brand {
+    font-size: 1.6rem;
+  }
+
+  .lb-reporting-form-card,
+  .lb-reporting-ai-card,
+  .lb-reporting-guidelines,
+  .lb-reporting-footer {
+    padding: 20px;
+  }
+
+  .lb-reporting-ai-card__meta-grid,
+  .lb-reporting-footer__links-grid,
+  .lb-reporting-footer__bottom div {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-home__links { display: none; }
+
+  .lb-home__brand { font-size: 1.65rem; }
+
+  .lb-home__hero h1 { font-size: 2.3rem; }
+
+  .lb-home__hero p,
+  .lb-home__section-head p,
+  .lb-home__map-copy p {
+    font-size: 0.96rem;
+  }
+
+  .lb-home__report-card,
+  .lb-home__analysis-card {
+    padding: 22px;
+  }
+
+  .lb-home__report-head { flex-direction: column; }
+
+  .lb-home__analysis-grid { grid-template-columns: 1fr; }
+
+  .lb-home__globe-card { height: 420px; }
+
+  .lb-home__globe-sphere { height: 280px; width: 280px; }
+
+  .lb-home__hud { padding: 12px 14px; }
+
+  .lb-app-shell { padding: 12px 12px 94px; }
+
+  .lb-topbar,
+  .lb-hero,
+  .lb-page-hero,
+  .lb-map-card,
+  .lb-panel,
+  .lb-form-card,
+  .lb-detail-hero,
+  .lb-detail-gallery,
+  .lb-detail-main,
+  .lb-splash-card,
+  .lb-onboarding-panel,
+  .lb-profile-hero,
+  .lb-notification-card,
+  .lb-filter-bar,
+  .lb-stat-card,
+  .lb-report-card {
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .lb-hero__copy h1,
+  .lb-page-hero h1,
+  .lb-detail-hero h1,
+  .lb-onboarding-panel__copy h2 {
+    font-size: 2rem;
+  }
+
+  .lb-map-surface { min-height: 420px; }
+
+  .lb-map-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -23,4 +23,14 @@
   --lb-radius-lg: 22px;
   --lb-radius-md: 18px;
   --lb-radius-sm: 14px;
+
+  /* shadcn/ui sidebar — navy theme to match lb-sidebar */
+  --sidebar: #0b2540;
+  --sidebar-foreground: #f5f8fb;
+  --sidebar-primary: #1d9e75;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #1d9e75;
 }

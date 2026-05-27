@@ -1,0 +1,5 @@
+$ cross-env NODE_OPTIONS=--no-deprecation next dev
+Image with src "https://res.cloudinary.com/dmqnfkme4/image/upload/v1779843700/lautbersih/media/rpopxnbtoxpuqorrfidz.jpg" is using quality "82" which is not configured in images.qualities [75]. Please update your config to [75, 82].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+Image with src "https://res.cloudinary.com/dmqnfkme4/image/upload/v1779844580/lautbersih/media/cumyhdy2ktgr175j939o.jpg" is using quality "82" which is not configured in images.qualities [75]. Please update your config to [75, 82].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities

@@ -38,43 +38,307 @@ img {
 }
 
 h1,
-h2,
-h3 {
-  font-family: var(--font-dm-serif), Georgia, serif;
-  font-weight: 400;
+h2 {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
 }
 
-p {
+h3, h4, h5, h6 {
+  font-family: var(--font-dm-sans), 'Segoe UI', sans-serif;
+  font-weight: 600;
   margin: 0;
+}
+
+.lb-badge, .lb-label, .lb-button, button, .label, badge {
+  font-family: var(--font-inter), 'Segoe UI', sans-serif;
+  font-weight: 500;
+}
+
+p {
+  font-family: var(--font-dm-sans), 'Segoe UI', sans-serif;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* ─── Admin Unauthorized ─────────────────────────────────────────── */
+
+.lb-admin-unauth {
+  align-items: center;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(29, 158, 117, 0.18), transparent 32%),
+    linear-gradient(135deg, #061b2c 0%, #0b2540 48%, #0e314f 100%);
+  color: #f5f8fb;
+  display: flex;
+  min-height: 100svh;
+  padding: 24px;
+}
+
+.lb-admin-unauth__card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 36px;
+}
+
+.lb-admin-unauth__icon {
+  align-items: center;
+  background: linear-gradient(135deg, #1d9e75, #14b8d4);
+  border-radius: 18px;
+  display: flex;
+  font-size: 1.4rem;
+  font-weight: 900;
+  height: 52px;
+  justify-content: center;
+  margin-bottom: 22px;
+  width: 52px;
+}
+
+.lb-admin-unauth__card h1 {
+  color: #fff;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1;
+  margin: 12px 0 16px;
+}
+
+.lb-admin-unauth__card p {
+  color: rgba(245, 248, 251, 0.72);
+  line-height: 1.7;
+}
+
+.lb-admin-unauth__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.lb-admin-unauth__primary,
+.lb-admin-unauth__secondary {
+  border-radius: 999px;
+  font-weight: 800;
+  padding: 12px 18px;
+}
+
+.lb-admin-unauth__primary {
+  background: #1d9e75;
+  color: #fff;
+}
+
+.lb-admin-unauth__secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f8fb;
 }
 
 /* ─── App Shell ──────────────────────────────────────────────────── */
 
 .lb-app-shell {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: 290px minmax(0, 1fr);
-  margin: 0 auto;
-  max-width: 1480px;
-  min-height: 100vh;
-  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+
+/* ── Aceternity sidebar wrappers ─────────────────────────────────── */
+
+.lb-acet-desktop {
+  display: none;
+
+  @media (min-width: 768px) {
+    display: flex;
+  }
+}
+
+.lb-acet-mobile-bar {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(11, 37, 64, 0.98), rgba(8, 27, 46, 1));
+  display: flex;
+  height: 52px;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 40;
+
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.lb-acet-mobile-drawer {
+  background: linear-gradient(180deg, rgba(11, 37, 64, 0.98), rgba(8, 27, 46, 1));
+  bottom: 0;
+  color: var(--lb-text-inverse);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  left: 0;
+  max-width: 280px;
+  padding: 64px 16px 24px;
+  position: fixed;
+  top: 0;
+  width: 80%;
+  z-index: 50;
 }
 
 .lb-sidebar {
   background: linear-gradient(180deg, rgba(11, 37, 64, 0.98), rgba(8, 27, 46, 1));
-  border: 1px solid var(--lb-border-strong);
-  border-radius: 32px;
-  box-shadow: var(--lb-shadow);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--lb-text-inverse);
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 16px;
+  height: 100svh;
+  overflow: hidden;
+  padding: 20px 12px;
+  position: sticky;
+  top: 0;
+}
+
+.lb-sidebar__brand-text {
+  display: grid;
+  gap: 1px;
+  line-height: 1.2;
+
+  strong {
+    color: var(--lb-text-inverse);
+    font-size: 0.96rem;
+  }
+
+  small {
+    color: rgba(245, 248, 251, 0.6);
+    font-size: 0.76rem;
+  }
+}
+
+.lb-sidebar__avatar {
+  align-items: center;
+  background: linear-gradient(135deg, var(--lb-secondary), #51c3ff);
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.lb-sidebar__user-text {
+  display: grid;
+  gap: 1px;
+  line-height: 1.2;
+  min-width: 0;
+
+  strong {
+    color: var(--lb-text-inverse);
+    font-size: 0.86rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: rgba(245, 248, 251, 0.6);
+    font-size: 0.72rem;
+  }
+}
+
+/* ── Aceternity sidebar nav links ──────────────────────────────────── */
+
+.lb-acet-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lb-acet-brand {
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  gap: 12px;
+  min-height: 52px;
+  overflow: hidden;
+  padding-bottom: 16px;
+  white-space: nowrap;
+}
+
+.lb-acet-user-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.lb-acet-nav-link {
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: rgba(245, 248, 251, 0.75);
+  display: flex;
+  gap: 10px;
+  overflow: hidden;
+  padding: 9px 10px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--lb-text-inverse);
+  }
+
+  &.is-active {
+    background: rgba(131, 245, 198, 0.12);
+    border-color: rgba(131, 245, 198, 0.28);
+    color: #83f5c6;
+
+    .lb-acet-nav-link__icon svg {
+      color: #83f5c6;
+    }
+  }
+
+  &--cta {
+    background: linear-gradient(135deg, var(--lb-secondary), #128b65);
+    border-color: rgba(29, 158, 117, 0.4);
+    color: #fff;
+    margin-top: 8px;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.lb-acet-nav-link__icon {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.lb-acet-nav-link__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.lb-sidebar__footer {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 24px 20px;
-  position: sticky;
-  top: 22px;
-  height: calc(100vh - 44px);
+  gap: 10px;
+  margin-top: auto;
+  overflow: hidden;
 }
 
 .lb-brand {
@@ -104,7 +368,7 @@ p {
   color: #fff;
   display: inline-flex;
   flex-shrink: 0;
-  font-family: var(--font-dm-serif), Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
   font-size: 1.2rem;
   height: 48px;
   justify-content: center;
@@ -167,9 +431,8 @@ p {
 .lb-sidebar__meta {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  margin-top: auto;
-  padding: 18px;
+  border-radius: 16px;
+  padding: 14px;
 
   strong {
     margin: 8px 0 6px;
@@ -214,9 +477,12 @@ p {
 
 .lb-workspace {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 22px;
   min-width: 0;
+  overflow: hidden;
+  padding: 22px;
 }
 
 .lb-topbar {
@@ -237,6 +503,48 @@ p {
   strong {
     font-size: 1.04rem;
   }
+}
+
+.lb-brand--sidebar {
+  flex-shrink: 0;
+  padding: 4px 0 12px;
+}
+
+/* Mobile sidebar variants */
+.lb-sidebar--mobile {
+  background: linear-gradient(180deg, rgba(11, 37, 64, 0.98), rgba(8, 27, 46, 1));
+  min-height: auto;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.lb-sidebar--drawer {
+  padding: 64px 24px 24px;
+  width: 80%;
+  max-width: 280px;
+}
+
+.lb-mobile-menu-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+
+  span {
+    background: var(--lb-text-inverse);
+    border-radius: 2px;
+    display: block;
+    height: 2px;
+    width: 22px;
+  }
+}
+
+.lb-mobile-close-btn {
+  color: var(--lb-text-inverse);
+  font-size: 1.2rem;
+  position: absolute;
+  right: 20px;
+  top: 20px;
 }
 
 .lb-topbar__actions {
@@ -778,7 +1086,7 @@ p {
 
   h3 {
     color: var(--lb-primary);
-    font-family: var(--font-dm-serif), Georgia, serif;
+    font-family: var(--font-playfair), Georgia, serif;
     font-size: 1rem;
     line-height: 1.3;
     margin-bottom: 6px;
@@ -1410,7 +1718,7 @@ p {
   color: #fff;
   display: inline-flex;
   flex-shrink: 0;
-  font-family: var(--font-dm-serif), Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
   font-size: 1.6rem;
   height: 92px;
   justify-content: center;

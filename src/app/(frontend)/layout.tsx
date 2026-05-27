@@ -1,5 +1,6 @@
-import { DM_Sans, DM_Serif_Display } from 'next/font/google'
+import { DM_Sans, Playfair_Display, Inter } from 'next/font/google'
 import React from 'react'
+import './tw.css'
 import './styles/styles.scss'
 
 import { Footer } from '@/components/lautbersih/Footer'
@@ -7,13 +8,21 @@ import { Navbar } from '@/components/lautbersih/Navbar'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
+  weight: ['400', '600'],
   variable: '--font-dm-sans',
 })
 
-const dmSerif = DM_Serif_Display({
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-dm-serif',
-  weight: '400',
+  weight: ['400', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['500'],
+  variable: '--font-inter',
 })
 
 export const metadata = {
@@ -26,7 +35,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang="id">
-      <body className={`${dmSans.variable} ${dmSerif.variable}`}>
+      <body className={`${dmSans.variable} ${playfair.variable} ${inter.variable}`}>
         <Navbar />
         {children}
         <Footer />

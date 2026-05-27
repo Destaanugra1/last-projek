@@ -35,7 +35,9 @@ export const loginAction = async (_prev: AuthState, formData: FormData): Promise
       collection: 'users',
       data: { email, password },
     })
-    await setAuthCookie(result.token)
+    if (result.token) {
+      await setAuthCookie(result.token)
+    }
   } catch {
     return { error: 'Email atau kata sandi salah. Silakan coba lagi.' }
   }
@@ -47,7 +49,6 @@ export const registerAction = async (_prev: AuthState, formData: FormData): Prom
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const fullName = String(formData.get('fullName') ?? '').trim()
-  const role = String(formData.get('role') ?? 'reporter')
 
   if (!email || !password || !fullName) {
     return { error: 'Nama lengkap, email, dan kata sandi wajib diisi.' }
@@ -57,14 +58,12 @@ export const registerAction = async (_prev: AuthState, formData: FormData): Prom
     return { error: 'Kata sandi minimal 8 karakter.' }
   }
 
-  const safeRole = role === 'reporter' ? 'reporter' : 'reporter'
-
   try {
     const payload = await getPayloadClient()
 
     await payload.create({
       collection: 'users',
-      data: { email, fullName, password, role: safeRole },
+      data: { email, fullName, password },
     })
 
     const result = await payload.login({
@@ -72,7 +71,9 @@ export const registerAction = async (_prev: AuthState, formData: FormData): Prom
       data: { email, password },
     })
 
-    await setAuthCookie(result.token)
+    if (result.token) {
+      await setAuthCookie(result.token)
+    }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : ''
     if (message.toLowerCase().includes('duplicate') || message.toLowerCase().includes('unique')) {

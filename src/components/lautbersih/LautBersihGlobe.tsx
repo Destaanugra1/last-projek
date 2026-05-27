@@ -3,67 +3,45 @@
 import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
 
+import type { GlobeMarker } from '@/components/ui/3d-globe'
 import type { FrontendReport } from '@/lib/reports'
 
-const World = dynamic(() => import('@/components/globe').then((m) => m.World), {
+const Globe3D = dynamic(() => import('@/components/ui/3d-globe').then((m) => m.Globe3D), {
   ssr: false,
+  loading: () => (
+    <div className="lb-globe-card__loading">
+      <span>Loading Globe...</span>
+    </div>
+  ),
 })
 
-// Severity → color mapping for markers/arcs (bright, glowing)
+const FALLBACK_AVATAR = '/api/media/file/default-avatar.png'
+
+// Severity → color mapping
 const severityColor: Record<FrontendReport['severity'], string> = {
-  low: '#22d3ee', // cyan — pantai bersih / aman
-  medium: '#fbbf24', // amber — moderat
-  critical: '#f43f5e', // rose — kritis
+  low: '#22d3ee',
+  medium: '#fbbf24',
+  critical: '#f43f5e',
 }
 
-// Hub: Jakarta as the radiating center for arcs
-const HUB = { lat: -6.2088, lng: 106.8456 }
-
 export function LautBersihGlobe({ reports }: { reports: FrontendReport[] }) {
-  const globeConfig = {
-    pointSize: 4,
-    globeColor: '#062056',
-    showAtmosphere: true,
-    atmosphereColor: '#ffffff',
-    atmosphereAltitude: 0.1,
-    emissive: '#062056',
-    emissiveIntensity: 0.1,
-    shininess: 0.9,
-    polygonColor: 'rgba(255, 255, 255, 0.7)',
-    ambientLight: '#38bdf8',
-    directionalLeftLight: '#ffffff',
-    directionalTopLight: '#ffffff',
-    pointLight: '#ffffff',
-    arcTime: 1500,
-    arcLength: 0.9,
-    rings: 1,
-    maxRings: 3,
-    initialPosition: { lat: -2.5489, lng: 118.0149 },
-    autoRotate: true,
-    autoRotateSpeed: 0.4,
-  }
-
-  const arcs = useMemo(() => {
-    const valid = reports.filter(
-      (r) =>
-        Number.isFinite(r.latitude) &&
-        Number.isFinite(r.longitude) &&
-        Math.abs(r.latitude) > 0.0001 &&
-        Math.abs(r.longitude) > 0.0001,
-    )
-
-    return valid.map((report, index) => ({
-      order: (index % 8) + 1,
-      startLat: HUB.lat,
-      startLng: HUB.lng,
-      endLat: report.latitude,
-      endLng: report.longitude,
-      arcAlt: 0.18 + (index % 5) * 0.08,
-      color: severityColor[report.severity] ?? severityColor.medium,
-    }))
+  const markers: GlobeMarker[] = useMemo(() => {
+    return reports
+      .filter(
+        (r) =>
+          Number.isFinite(r.latitude) &&
+          Number.isFinite(r.longitude) &&
+          Math.abs(r.latitude) > 0.0001 &&
+          Math.abs(r.longitude) > 0.0001,
+      )
+      .map((report) => ({
+        lat: report.latitude,
+        lng: report.longitude,
+        src: report.photoUrls[0] || FALLBACK_AVATAR,
+        label: report.locationLabel || report.title,
+      }))
   }, [reports])
 
-  // Counts for HUD
   const counts = useMemo(() => {
     const total = reports.length
     const critical = reports.filter((r) => r.severity === 'critical').length
@@ -87,7 +65,27 @@ export function LautBersihGlobe({ reports }: { reports: FrontendReport[] }) {
       </div>
 
       <div className="lb-globe-card__canvas">
-        <World data={arcs} globeConfig={globeConfig} />
+        <Globe3D
+          markers={markers}
+          config={{
+            radius: 3.2,
+            showAtmosphere: true,
+            atmosphereColor: '#38bdf8',
+            atmosphereIntensity: 0.7,
+            atmosphereBlur: 3,
+            bumpScale: 4,
+            autoRotateSpeed: 0.3,
+            enableZoom: false,
+            enablePan: false,
+            showWireframe: true,
+            wireframeColor: '#38bdf8',
+            backgroundColor: null,
+            initialRotation: { x: 0.3, y: 2.0 },
+            minDistance: 5,
+            maxDistance: 14,
+          }}
+          className="!h-full !w-full"
+        />
       </div>
 
       <div className="lb-globe-card__legend">

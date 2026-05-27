@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 import { AppShell } from '@/components/lautbersih/AppShell'
@@ -9,10 +10,15 @@ import { submitReport } from './actions'
 
 export const dynamic = 'force-dynamic'
 
-type LaporUser = { phone?: string | null; organization?: string | null }
+type LaporUser = { phone?: string | null; organization?: string | null; role?: string }
 
 export default async function ReportFormPage() {
   const user = (await getCurrentUser()) as LaporUser | null
+
+  if (user?.role === 'user' || !user) {
+    redirect('/?error=unauthorized')
+  }
+
   const isProfileComplete = !!(user?.phone && user?.organization)
 
   if (!isProfileComplete) {

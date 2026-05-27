@@ -62,7 +62,7 @@ export const updateProfileAction = async (
     await payload.update({
       collection: 'users',
       id: user.id,
-      data: updateData as Parameters<typeof payload.update>[0]['data'],
+      data: updateData as any,
       overrideAccess: true,
     })
   } catch {

@@ -33,10 +33,13 @@ export const Navbar = async () => {
           <Link className="lb-global-nav__link" href="/berita">
             Berita
           </Link>
-          {user && (
+          {user && user.role !== 'user' && (
             <>
               <Link className="lb-global-nav__link" href="/lapor">
                 Lapor
+              </Link>
+              <Link className="lb-global-nav__link" href="/laporan">
+                Laporan
               </Link>
             </>
           )}

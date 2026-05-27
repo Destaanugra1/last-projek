@@ -73,6 +73,7 @@ export interface Config {
     reports: Report;
     'blog-posts': BlogPost;
     partners: Partner;
+    'reporter-applications': ReporterApplication;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     reports: ReportsSelect<false> | ReportsSelect<true>;
     'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
     partners: PartnersSelect<false> | PartnersSelect<true>;
+    'reporter-applications': ReporterApplicationsSelect<false> | ReporterApplicationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -97,9 +99,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'site-settings': SiteSetting;
+    'reporter-registration': ReporterRegistration;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'reporter-registration': ReporterRegistrationSelect<false> | ReporterRegistrationSelect<true>;
   };
   locale: null;
   widgets: {
@@ -136,7 +140,7 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   fullName: string;
-  role: 'admin' | 'reporter';
+  role: 'admin' | 'reporter' | 'user';
   phone?: string | null;
   organization?: string | null;
   avatarUrl?: string | null;
@@ -314,6 +318,40 @@ export interface Partner {
   createdAt: string;
 }
 /**
+ * Kelola pendaftaran reporter. Ubah status menjadi Disetujui untuk mengaktifkan role reporter pada akun user.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reporter-applications".
+ */
+export interface ReporterApplication {
+  id: number;
+  /**
+   * Akun yang mengirim pengajuan reporter.
+   */
+  user: number | User;
+  nama_lengkap: string;
+  alamat: string;
+  no_hp: string;
+  /**
+   * Field lama untuk kompatibilitas data. Form baru tidak lagi meminta foto profil.
+   */
+  foto_profil?: (number | null) | Media;
+  /**
+   * Bukti CV/resume dalam format gambar JPG atau PNG.
+   */
+  foto_cv: number | Media;
+  /**
+   * Admin dapat menyetujui atau menolak pengajuan dari field ini.
+   */
+  status: 'pending' | 'approved' | 'rejected';
+  /**
+   * Wajib diisi jika pengajuan ditolak.
+   */
+  alasan_penolakan?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -360,6 +398,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'partners';
         value: number | Partner;
+      } | null)
+    | ({
+        relationTo: 'reporter-applications';
+        value: number | ReporterApplication;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -535,6 +577,22 @@ export interface PartnersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reporter-applications_select".
+ */
+export interface ReporterApplicationsSelect<T extends boolean = true> {
+  user?: T;
+  nama_lengkap?: T;
+  alamat?: T;
+  no_hp?: T;
+  foto_profil?: T;
+  foto_cv?: T;
+  status?: T;
+  alasan_penolakan?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -583,7 +641,62 @@ export interface SiteSetting {
   tagline: string;
   heroTitle: string;
   heroDescription: string;
+  heroBadge: string;
+  heroPrimaryAction: {
+    label: string;
+    href: string;
+  };
+  heroSecondaryAction: {
+    label: string;
+    href: string;
+  };
+  /**
+   * Unggah gambar hero dari Payload CMS. Jika jumlah gambar lebih dari 1 maka carousel aktif otomatis dengan transisi fade yang halus. Disarankan semua banner memakai rasio yang sama, misalnya 16:9 atau 1920x1080, agar posisi visual tetap konsisten.
+   */
+  heroBanners?:
+    | {
+        /**
+         * Gunakan gambar banner dengan rasio konsisten seperti 16:9 agar hero tidak terlihat bergeser saat carousel berganti.
+         */
+        image: number | Media;
+        eyebrow?: string | null;
+        title?: string | null;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   statsNotice?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reporter-registration".
+ */
+export interface ReporterRegistration {
+  id: number;
+  steps?:
+    | {
+        title: string;
+        content?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        image?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -596,7 +709,46 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   tagline?: T;
   heroTitle?: T;
   heroDescription?: T;
+  heroBadge?: T;
+  heroPrimaryAction?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  heroSecondaryAction?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  heroBanners?:
+    | T
+    | {
+        image?: T;
+        eyebrow?: T;
+        title?: T;
+        description?: T;
+        id?: T;
+      };
   statsNotice?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reporter-registration_select".
+ */
+export interface ReporterRegistrationSelect<T extends boolean = true> {
+  steps?:
+    | T
+    | {
+        title?: T;
+        content?: T;
+        image?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

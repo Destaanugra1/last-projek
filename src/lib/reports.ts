@@ -78,18 +78,58 @@ export type DashboardStats = {
   validatedCount: number
 }
 
+export type SiteHeroAction = {
+  href: string
+  label: string
+}
+
 export type SiteSettingsData = {
+  heroBadge: string
+  heroBanners: SiteHeroBanner[]
   heroDescription: string
+  heroPrimaryAction: SiteHeroAction
+  heroSecondaryAction: SiteHeroAction
   heroTitle: string
   siteName: string
   statsNotice: string
   tagline: string
 }
 
+type RawHeroAction = {
+  href?: string | null
+  label?: string | null
+}
+
+type RawHeroBanner = {
+  description?: string | null
+  eyebrow?: string | null
+  image?: RelationDoc | number | string | null
+  title?: string | null
+}
+
+export type SiteHeroBanner = {
+  alt: string
+  description: string | null
+  eyebrow: string | null
+  id: string
+  src: string
+  title: string | null
+}
+
 const defaultSiteSettings: SiteSettingsData = {
+  heroBadge: 'SDG 14 · Life Below Water',
+  heroBanners: [],
   heroDescription:
-    'LautBersih membantu warga, relawan, dan admin memantau sebaran sampah pesisir secara real-time dengan alur validasi yang jelas.',
-  heroTitle: 'Laporkan titik pencemaran pesisir dengan cepat dan terstruktur.',
+    'Memantau, menganalisis, dan menindaklanjuti ancaman maritim secara real-time untuk melindungi kekayaan hayati nusantara.',
+  heroPrimaryAction: {
+    href: '/petawilayah',
+    label: 'Mulai Monitoring',
+  },
+  heroSecondaryAction: {
+    href: '/mulai',
+    label: 'Pelajari Protokol',
+  },
+  heroTitle: 'Otoritas Maritim untuk Ekosistem Laut Indonesia yang Berkelanjutan',
   siteName: 'LautBersih',
   statsNotice: 'Data dashboard diperbarui dari laporan yang masuk ke Payload CMS.',
   tagline: 'Platform pelaporan sampah pesisir berbasis komunitas',
@@ -136,6 +176,35 @@ const normalizeCategory = (value: RawReport['category']): FrontendCategory | nul
   }
 }
 
+const normalizeHeroBanner = (banner: RawHeroBanner, index: number): SiteHeroBanner | null => {
+  if (!banner.image || typeof banner.image === 'number' || typeof banner.image === 'string') {
+    return null
+  }
+
+  const src = normalizeMediaURL(banner.image)
+
+  if (!src) {
+    return null
+  }
+
+  return {
+    alt: banner.image.alt || banner.title || `Banner hero ${index + 1}`,
+    description: banner.description?.trim() || null,
+    eyebrow: banner.eyebrow?.trim() || null,
+    id: String(banner.image.id || `hero-banner-${index + 1}`),
+    src,
+    title: banner.title?.trim() || null,
+  }
+}
+
+const normalizeHeroAction = (
+  action: RawHeroAction | null | undefined,
+  fallback: SiteHeroAction,
+): SiteHeroAction => ({
+  href: action?.href?.trim() || fallback.href,
+  label: action?.label?.trim() || fallback.label,
+})
+
 const normalizeReport = (doc: RawReport): FrontendReport => {
   const recommendations =
     doc.aiAnalysis?.recommendations
@@ -171,11 +240,30 @@ export const getSiteSettings = async (): Promise<SiteSettingsData> => {
 
   try {
     const data = (await payload.findGlobal({
+      depth: 2,
       slug: 'site-settings',
-    })) as Partial<SiteSettingsData>
+    })) as Partial<SiteSettingsData> & {
+      heroBanners?: RawHeroBanner[]
+      heroPrimaryAction?: RawHeroAction
+      heroSecondaryAction?: RawHeroAction
+    }
 
     return {
+      heroBadge: data.heroBadge || defaultSiteSettings.heroBadge,
+      heroBanners:
+        data.heroBanners
+          ?.map((banner, index) => normalizeHeroBanner(banner, index))
+          .filter((banner): banner is SiteHeroBanner => Boolean(banner)) ||
+        defaultSiteSettings.heroBanners,
       heroDescription: data.heroDescription || defaultSiteSettings.heroDescription,
+      heroPrimaryAction: normalizeHeroAction(
+        data.heroPrimaryAction,
+        defaultSiteSettings.heroPrimaryAction,
+      ),
+      heroSecondaryAction: normalizeHeroAction(
+        data.heroSecondaryAction,
+        defaultSiteSettings.heroSecondaryAction,
+      ),
       heroTitle: data.heroTitle || defaultSiteSettings.heroTitle,
       siteName: data.siteName || defaultSiteSettings.siteName,
       statsNotice: data.statsNotice || defaultSiteSettings.statsNotice,
@@ -203,14 +291,17 @@ export const getWasteCategories = async (): Promise<FrontendCategory[]> => {
   }))
 }
 
-export const getReports = async (limit = 12): Promise<FrontendReport[]> => {
+export const getReports = async (
+  limit = 12,
+  sort: '-createdAt' | '-submittedAt' | '-updatedAt' = '-submittedAt',
+): Promise<FrontendReport[]> => {
   const payload = await getPayloadClient()
   const result = await payload.find({
     collection: 'reports',
     depth: 2,
     limit,
     overrideAccess: false,
-    sort: '-submittedAt',
+    sort,
   })
 
   return result.docs.map((doc) => normalizeReport(doc as RawReport))

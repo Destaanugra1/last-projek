@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { getCurrentUser } from '@/lib/auth'
 
 import { SeverityBadge, StatusBadge } from '@/components/lautbersih/Badges'
 import { getReports } from '@/lib/reports'
@@ -6,6 +8,12 @@ import { getReports } from '@/lib/reports'
 export const dynamic = 'force-dynamic'
 
 export default async function ReportsListPage() {
+  const user = (await getCurrentUser()) as { role?: string } | null
+  
+  if (user?.role === 'user' || !user) {
+    redirect('/?error=unauthorized')
+  }
+
   const reports = await getReports(64)
   const criticalCount = reports.filter((r) => r.severity === 'critical').length
   const pendingCount = reports.filter((r) => r.status === 'pending_review').length

@@ -11,7 +11,9 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Reports } from './collections/Reports'
 import { WasteCategories } from './collections/WasteCategories'
+import { ReporterApplications } from './collections/ReporterApplications'
 import { SiteSettings } from './globals/SiteSettings'
+import { ReporterRegistration } from './globals/ReporterRegistration'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -23,9 +25,9 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, WasteCategories, Reports, BlogPosts, Partners],
+  collections: [Users, Media, WasteCategories, Reports, BlogPosts, Partners, ReporterApplications],
   editor: lexicalEditor(),
-  globals: [SiteSettings],
+  globals: [SiteSettings, ReporterRegistration],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 const PROTECTED_PATHS = ['/dashboard', '/lapor', '/profil']
 const AUTH_COOKIE = 'payload-token'
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const token = req.cookies.get(AUTH_COOKIE)
   const { pathname } = req.nextUrl
 

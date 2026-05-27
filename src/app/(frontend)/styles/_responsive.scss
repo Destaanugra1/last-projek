@@ -1,16 +1,12 @@
 /* ─── Responsive Breakpoints ─────────────────────────────────────── */
 
 @media (max-width: 1280px) {
-  .lb-home__reports-grid,
-  .lb-home__map-section,
-  .lb-app-shell {
+  .lb-home__reports-layout,
+  .lb-home__reports-layout.is-compact-only {
     grid-template-columns: 1fr;
   }
 
-  .lb-sidebar {
-    height: auto;
-    position: static;
-  }
+  .lb-home__report-card--featured { min-height: 520px; }
 
   .lb-map-stage,
   .lb-report-builder,
@@ -155,7 +151,48 @@
     flex-wrap: wrap;
   }
 
-  .lb-home__hero { padding: 156px 16px 148px; }
+  .lb-home__hero {
+    height: 100vh;
+    min-height: 100vh;
+    padding: 148px 16px 36px;
+  }
+
+  .lb-home__hero-shell {
+    gap: 28px;
+  }
+
+  .lb-home__hero-content {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .lb-home__hero-glass-card {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 32px 0;
+  }
+
+  .lb-home__hero-glass-left {
+    padding-left: 20px;
+  }
+
+  .lb-home__hero-glass-right {
+    padding-left: 20px;
+  }
+
+  .lb-home__hero-actions,
+  .lb-home__hero-indicators {
+    justify-content: flex-start;
+  }
+
+  .lb-home__hero-glass-left h1 {
+    font-size: 2.2rem;
+  }
+
+  .lb-home__hero p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
 
   .lb-home__section,
   .lb-home__map-section,
@@ -165,23 +202,50 @@
   }
 
   .lb-home__stats-grid,
-  .lb-home__reports-grid,
   .lb-home__footer-links {
     grid-template-columns: 1fr;
   }
+
+  .lb-home__reports-layout,
+  .lb-home__reports-stack {
+    gap: 20px;
+  }
+
+  .lb-home__report-card-head,
+  .lb-home__report-meta-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lb-home__report-badges { justify-content: flex-start; }
 
   .lb-home__stat-card + .lb-home__stat-card {
     border-left: none;
     border-top: 1px solid rgba(196, 198, 206, 0.2);
   }
 
+  .lb-globe-card {
+    height: 520px;
+
+    &__hud--right {
+      right: 18px;
+      top: auto;
+      bottom: 18px;
+    }
+
+    &__legend {
+      bottom: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      left: 16px;
+      right: 16px;
+      transform: none;
+    }
+  }
+
   .lb-home__globe-card { height: 520px; }
 
   .lb-home__globe-sphere { height: 360px; width: 360px; }
-
-  .lb-app-shell { padding: 16px 16px 94px; }
-
-  .lb-sidebar { display: none; }
 
   .lb-topbar,
   .lb-detail-hero__head,
@@ -292,22 +356,105 @@
     font-size: 0.96rem;
   }
 
-  .lb-home__report-card,
-  .lb-home__analysis-card {
+  .lb-home__hero-glass-card {
+    padding: 24px 0;
+    gap: 24px;
+  }
+
+  .lb-home__hero-glass-left {
+    padding-left: 16px;
+    border-left-width: 4px;
+  }
+
+  .lb-home__hero-glass-right {
+    padding-bottom: 24px;
+    padding-left: 0;
+    border-bottom-width: 4px;
+  }
+
+  .lb-home__hero p {
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .lb-home__hero-loading {
+    bottom: 18px;
+    left: 16px;
+    right: 16px;
+    text-align: center;
+  }
+
+  .lb-home__hero-indicators {
+    width: 100%;
+  }
+
+  .lb-home__report-card--compact,
+  .lb-home__report-card--featured,
+  .lb-home__reports-empty,
+  .lb-home__report-card--skeleton {
     padding: 22px;
   }
 
-  .lb-home__report-head { flex-direction: column; }
+  .lb-home__report-thumb,
+  .lb-home__report-thumb-fallback {
+    flex-basis: 72px;
+    height: 72px;
+    width: 72px;
+  }
 
-  .lb-home__analysis-grid { grid-template-columns: 1fr; }
+  .lb-home__report-featured-body h3 {
+    font-size: 1.8rem;
+    max-width: 100%;
+  }
+
+  .lb-home__report-card--featured,
+  .lb-home__report-card--skeleton.is-featured {
+    min-height: 420px;
+  }
+
+  .lb-home__report-summary-text,
+  .lb-home__report-featured-body .lb-home__report-description {
+    max-width: 100%;
+  }
+
+  .lb-globe-card {
+    border-radius: 22px;
+    height: 420px;
+
+    &__hud {
+      max-width: calc(100% - 32px);
+      padding: 10px 12px;
+
+      &--left,
+      &--right {
+        left: 16px;
+        right: 16px;
+      }
+
+      &--left {
+        top: 16px;
+      }
+
+      &--right {
+        bottom: 64px;
+        text-align: left;
+      }
+    }
+
+    &__legend {
+      bottom: 12px;
+      border-radius: 18px;
+      font-size: 0.66rem;
+      gap: 10px;
+      padding: 8px 12px;
+    }
+  }
 
   .lb-home__globe-card { height: 420px; }
 
   .lb-home__globe-sphere { height: 280px; width: 280px; }
 
   .lb-home__hud { padding: 12px 14px; }
-
-  .lb-app-shell { padding: 12px 12px 94px; }
 
   .lb-topbar,
   .lb-hero,

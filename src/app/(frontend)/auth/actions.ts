@@ -63,7 +63,12 @@ export const registerAction = async (_prev: AuthState, formData: FormData): Prom
 
     await payload.create({
       collection: 'users',
-      data: { email, fullName, password },
+      data: { 
+        email, 
+        fullName, 
+        password,
+        role: 'user'
+      },
     })
 
     const result = await payload.login({

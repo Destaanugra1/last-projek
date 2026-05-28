@@ -98,7 +98,6 @@ export const ReporterApplications: CollectionConfig = {
       name: 'cvPreview',
       type: 'ui',
       admin: {
-        className: 'reporter-cv-preview-field',
         components: {
           Field: '@/components/admin/CVPreviewField#CVPreviewField',
         },

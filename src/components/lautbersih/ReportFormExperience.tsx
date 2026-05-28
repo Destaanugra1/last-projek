@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { useFormStatus } from 'react-dom'
 
 import { analyzePhotoComplete, analyzeWithGemini } from '@/app/(frontend)/lapor/analyze'
 
@@ -122,6 +123,28 @@ const parseCoordinates = (value: string) => {
     latitude: Number.isFinite(latitude) ? latitude : -6.1751,
     longitude: Number.isFinite(longitude) ? longitude : 106.8272,
   }
+}
+
+const ReportSubmitButton = () => {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      aria-disabled={pending}
+      className={`lb-reporting-submit${pending ? ' is-loading' : ''}`}
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? (
+        <>
+          <span className="lb-reporting-submit__spinner" />
+          Mengirim Laporan...
+        </>
+      ) : (
+        'Kirim Laporan'
+      )}
+    </button>
+  )
 }
 
 export const ReportFormExperience = ({
@@ -521,9 +544,7 @@ export const ReportFormExperience = ({
                 </div>
               )}
 
-              <button className="lb-reporting-submit" type="submit">
-                Kirim Laporan
-              </button>
+              <ReportSubmitButton />
             </form>
           </section>
 
@@ -672,6 +693,39 @@ export const ReportFormExperience = ({
         </div>
       </main>
 
+      <style jsx>{`
+        .lb-reporting-submit {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.65rem;
+        }
+
+        .lb-reporting-submit.is-loading {
+          cursor: wait;
+          opacity: 0.9;
+        }
+
+        .lb-reporting-submit:disabled {
+          pointer-events: none;
+        }
+
+        .lb-reporting-submit__spinner {
+          width: 1rem;
+          height: 1rem;
+          border: 2px solid rgba(255, 255, 255, 0.28);
+          border-top-color: #fff;
+          border-radius: 999px;
+          animation: lb-reporting-submit-spin 0.8s linear infinite;
+        }
+
+        @keyframes lb-reporting-submit-spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   )
 }

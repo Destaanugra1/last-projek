@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 
-import { LogoutButton } from './LogoutButton'
+// import { LogoutButton } from './LogoutButton'
 
 type UserProp = {
   id: string | number
@@ -146,7 +146,7 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
                   </div>
                   <span>{(user.fullName ?? user.email ?? '') as string}</span>
                 </Link>
-                <LogoutButton />
+                {/*<LogoutButton />*/}
               </div>
             ) : (
               <div className="lb-global-nav__auth">
@@ -238,7 +238,7 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
                   onClick={closeMenu}
                   className="mt-2 flex w-full [&>button]:w-full [&>button]:py-3 [&>button]:text-sm"
                 >
-                  <LogoutButton />
+                  {/*<LogoutButton />*/}
                 </div>
               </>
             ) : (

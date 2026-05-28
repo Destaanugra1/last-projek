@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Stepper, { Step } from '@/components/lautbersih/Stepper'
 import type { Media } from '@/payload-types'
 import { Image as ImageIcon, X, CheckCircle2 } from 'lucide-react'
+import { submitReporterApplication } from './actions'
 
 export type ReporterRegistrationStep = {
   title: string
@@ -49,6 +50,89 @@ export default function RegistrasiReporterClient({
     Partial<Record<'alamat' | 'foto_cv' | 'nama_lengkap' | 'no_hp', string>>
   >({})
   const [success, setSuccess] = useState(false)
+
+  const LOCAL_STORAGE_KEY = 'reporter_registration_form_data'
+
+  // Load saved form data on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setFormData((prev) => ({
+            ...prev,
+            nama_lengkap: parsed.nama_lengkap || '',
+            alamat: parsed.alamat || '',
+            no_hp: parsed.no_hp || '',
+          }))
+        }
+      } catch (e) {
+        console.error('Failed to load saved form data', e)
+      }
+    }
+  }, [])
+
+  // Save text fields to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const dataToSave = {
+          nama_lengkap: formData.nama_lengkap,
+          alamat: formData.alamat,
+          no_hp: formData.no_hp,
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave))
+      } catch (e) {
+        console.error('Failed to save form data', e)
+      }
+    }
+  }, [formData.nama_lengkap, formData.alamat, formData.no_hp])
+
+  const clearSavedFormData = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY)
+      } catch (e) {
+        console.error('Failed to clear saved form data', e)
+      }
+    }
+  }
+
+  const isFormDirty = () => {
+    return (
+      formData.nama_lengkap.trim() !== '' ||
+      formData.alamat.trim() !== '' ||
+      formData.no_hp.trim() !== '' ||
+      formData.foto_cv !== null
+    )
+  }
+
+  // Confirm before unload / refresh if dirty
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isFormDirty()) {
+        e.preventDefault()
+        e.returnValue = '' // standard browser alert
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [formData])
+
+  const handleCloseRequest = () => {
+    if (isFormDirty()) {
+      const confirmClose = window.confirm(
+        'Apakah Anda yakin ingin menutup pendaftaran? Data yang telah Anda isi akan hilang.',
+      )
+      if (!confirmClose) return
+
+      // Clear saved data on confirmed cancellation/close
+      clearSavedFormData()
+    }
+    if (onClose) onClose()
+  }
 
   const setTextField = (field: 'alamat' | 'nama_lengkap' | 'no_hp', value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -128,39 +212,20 @@ export default function RegistrasiReporterClient({
     setError(null)
 
     try {
-      // Upload Foto CV
-      const formDataCv = new FormData()
-      formDataCv.append('file', formData.foto_cv)
-      formDataCv.append('alt', `Foto CV ${trimmedData.nama_lengkap}`)
+      // Build a FormData object to pass the file and text data safely to the server action
+      const submissionFormData = new FormData()
+      submissionFormData.append('nama_lengkap', trimmedData.nama_lengkap)
+      submissionFormData.append('alamat', trimmedData.alamat)
+      submissionFormData.append('no_hp', trimmedData.no_hp)
+      submissionFormData.append('foto_cv', formData.foto_cv)
 
-      const resCv = await fetch('/api/media', {
-        method: 'POST',
-        body: formDataCv,
-      })
-      if (!resCv.ok) throw new Error('Gagal mengunggah foto CV')
-      const dataCv = await resCv.json()
+      const result = await submitReporterApplication(submissionFormData, userId)
 
-      // Submit Application
-      const applicationData = {
-        user: userId,
-        nama_lengkap: trimmedData.nama_lengkap,
-        alamat: trimmedData.alamat,
-        no_hp: trimmedData.no_hp,
-        foto_cv: dataCv.doc.id,
-        status: 'pending',
+      if (result.error) {
+        throw new Error(result.error)
       }
 
-      const resApp = await fetch('/api/reporter-applications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(applicationData),
-      })
-
-      if (!resApp.ok) {
-        const errorData = await resApp.json()
-        throw new Error(errorData?.errors?.[0]?.message || 'Gagal mengirim pengajuan')
-      }
-
+      clearSavedFormData()
       setSuccess(true)
       return true
     } catch (err: unknown) {
@@ -196,170 +261,182 @@ export default function RegistrasiReporterClient({
   }
 
   return (
-    <Stepper
-      initialStep={1}
-      onFinalStepCompleted={handleSubmit}
-      backButtonText="Kembali"
-      nextButtonText="Lanjutkan"
-      disableStepIndicators={false}
-      nextButtonProps={{
-        disabled: loading,
-      }}
-      stepCircleContainerClassName="lb-registration-card"
-      stepContainerClassName="lb-registration-steps"
-      contentClassName="lb-registration-content"
-      footerClassName="lb-registration-footer"
-    >
-      {/* 1. CMS Steps */}
-      {steps.map((step, idx) => {
-        const imageUrl = getStepImageUrl(step.image)
+    <div className="relative w-full">
+      {onClose && (
+        <button
+          type="button"
+          className="lb-register-modal__close"
+          onClick={handleCloseRequest}
+          aria-label="Tutup popup pendaftaran"
+        >
+          <X size={18} />
+        </button>
+      )}
+      <Stepper
+        initialStep={1}
+        onFinalStepCompleted={handleSubmit}
+        backButtonText="Kembali"
+        nextButtonText="Lanjutkan"
+        disableStepIndicators={false}
+        nextButtonProps={{
+          disabled: loading,
+        }}
+        stepCircleContainerClassName="lb-registration-card"
+        stepContainerClassName="lb-registration-steps"
+        contentClassName="lb-registration-content"
+        footerClassName="lb-registration-footer"
+      >
+        {/* 1. CMS Steps */}
+        {steps.map((step, idx) => {
+          const imageUrl = getStepImageUrl(step.image)
 
-        return (
-          <Step key={step.id || idx}>
-            {imageUrl && (
-              <div className="mb-4 rounded-[16px] overflow-hidden max-h-40 relative aspect-[21/9] w-full bg-[#f3f7fc] border border-[#edf3fb] shadow-sm">
-                <img
-                  src={imageUrl}
-                  alt={step.title}
-                  className="object-cover absolute inset-0 w-full h-full"
-                />
-              </div>
-            )}
+          return (
+            <Step key={step.id || idx}>
+              {imageUrl && (
+                <div className="mb-4 rounded-[16px] overflow-hidden max-h-40 relative aspect-[21/9] w-full bg-[#f3f7fc] border border-[#edf3fb] shadow-sm">
+                  <img
+                    src={imageUrl}
+                    alt={step.title}
+                    className="object-cover absolute inset-0 w-full h-full"
+                  />
+                </div>
+              )}
 
-            <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[#0b2540] tracking-tight">
-              {step.title}
+              <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[#0b2540] tracking-tight">
+                {step.title}
+              </h2>
+
+              {Boolean(step.content) && (
+                <div className="prose prose-sm text-[#516070] max-w-none">
+                  <p>
+                    Mohon baca dan pahami panduan serta tanggung jawab sebagai reporter LautBersih
+                    sebelum melanjutkan ke proses pengisian data diri.
+                  </p>
+                </div>
+              )}
+            </Step>
+          )
+        })}
+
+        {/* 2. Registration Form Step */}
+        <Step>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-[#0b2540] tracking-tight mb-1">
+              Data Diri Reporter
             </h2>
-
-            {Boolean(step.content) && (
-              <div className="prose prose-sm text-[#516070] max-w-none">
-                <p>
-                  Mohon baca dan pahami panduan serta tanggung jawab sebagai reporter LautBersih
-                  sebelum melanjutkan ke proses pengisian data diri.
-                </p>
-              </div>
-            )}
-          </Step>
-        )
-      })}
-
-      {/* 2. Registration Form Step */}
-      <Step>
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-[#0b2540] tracking-tight mb-1">
-            Data Diri Reporter
-          </h2>
-          <p className="text-sm text-[#516070]">Lengkapi data singkat untuk verifikasi profil.</p>
-        </div>
-
-        {error && (
-          <div className="p-3 mb-4 text-[#991b1b] bg-[#fee2e2] border border-[#fca5a5] rounded-xl text-sm font-medium">
-            {error}
-          </div>
-        )}
-
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
-                Nama Lengkap
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full p-2.5 border border-[#d1d9e2] rounded-lg bg-white text-sm text-[#112032] focus:outline-none focus:border-[#1d9e75] focus:ring-4 focus:ring-[#1d9e75]/10 transition-all"
-                value={formData.nama_lengkap}
-                onChange={(e) => setTextField('nama_lengkap', e.target.value)}
-                placeholder="Masukkan nama lengkap"
-                aria-invalid={Boolean(fieldErrors.nama_lengkap)}
-              />
-              {fieldErrors.nama_lengkap && (
-                <p className="mt-1 text-xs font-medium text-[#b42318]">
-                  {fieldErrors.nama_lengkap}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
-                Nomor HP / WhatsApp
-              </label>
-              <input
-                type="text"
-                required
-                pattern="^08[0-9]{9,11}$"
-                title="Nomor HP harus diawali dengan 08 dan memiliki panjang 11-13 digit"
-                className="w-full p-2.5 border border-[#d1d9e2] rounded-lg bg-white text-sm text-[#112032] focus:outline-none focus:border-[#1d9e75] focus:ring-4 focus:ring-[#1d9e75]/10 transition-all"
-                value={formData.no_hp}
-                onChange={(e) => setTextField('no_hp', e.target.value)}
-                placeholder="cth: 081234567890"
-                aria-invalid={Boolean(fieldErrors.no_hp)}
-              />
-              {fieldErrors.no_hp && (
-                <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.no_hp}</p>
-              )}
-            </div>
+            <p className="text-sm text-[#516070]">Lengkapi data singkat untuk verifikasi profil.</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
-              Alamat Lengkap
-            </label>
-            <textarea
-              required
-              rows={2}
-              className="w-full p-2.5 border border-[#d1d9e2] rounded-lg bg-white text-sm text-[#112032] focus:outline-none focus:border-[#1d9e75] focus:ring-4 focus:ring-[#1d9e75]/10 transition-all resize-none"
-              value={formData.alamat}
-              onChange={(e) => setTextField('alamat', e.target.value)}
-              placeholder="Tuliskan alamat domisili lengkap Anda"
-              aria-invalid={Boolean(fieldErrors.alamat)}
-            ></textarea>
-            {fieldErrors.alamat && (
-              <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.alamat}</p>
-            )}
-          </div>
-
-          <div className="pt-1">
-            <label className="block text-sm font-semibold mb-1.5 text-[#112032]">Foto CV</label>
-            <ImageDropzone
-              accept="image/jpeg, image/png, image/jpg"
-              maxSize="2MB"
-              file={formData.foto_cv}
-              onChange={handleFileChange}
-              emptyText="Foto CV / resume"
-            />
-            {fieldErrors.foto_cv && (
-              <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.foto_cv}</p>
-            )}
-          </div>
-
-          {loading && (
-            <div className="pt-4 flex items-center justify-center text-[#1d9e75] font-medium text-sm">
-              <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#1d9e75]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Sedang memproses pengajuan...
+          {error && (
+            <div className="p-3 mb-4 text-[#991b1b] bg-[#fee2e2] border border-[#fca5a5] rounded-xl text-sm font-medium">
+              {error}
             </div>
           )}
-        </form>
-      </Step>
-    </Stepper>
+
+          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
+                  Nama Lengkap
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="w-full p-2.5 border border-[#d1d9e2] rounded-lg bg-white text-sm text-[#112032] focus:outline-none focus:border-[#1d9e75] focus:ring-4 focus:ring-[#1d9e75]/10 transition-all"
+                  value={formData.nama_lengkap}
+                  onChange={(e) => setTextField('nama_lengkap', e.target.value)}
+                  placeholder="Masukkan nama lengkap"
+                  aria-invalid={Boolean(fieldErrors.nama_lengkap)}
+                />
+                {fieldErrors.nama_lengkap && (
+                  <p className="mt-1 text-xs font-medium text-[#b42318]">
+                    {fieldErrors.nama_lengkap}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
+                  Nomor HP / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  required
+                  pattern="^08[0-9]{9,11}$"
+                  title="Nomor HP harus diawali dengan 08 dan memiliki panjang 11-13 digit"
+                  className="w-full p-2.5 border border-[#d1d9e2] rounded-lg bg-white text-sm text-[#112032] focus:outline-none focus:border-[#1d9e75] focus:ring-4 focus:ring-[#1d9e75]/10 transition-all"
+                  value={formData.no_hp}
+                  onChange={(e) => setTextField('no_hp', e.target.value)}
+                  placeholder="cth: 081234567890"
+                  aria-invalid={Boolean(fieldErrors.no_hp)}
+                />
+                {fieldErrors.no_hp && (
+                  <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.no_hp}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
+                Alamat Lengkap
+              </label>
+              <textarea
+                required
+                rows={2}
+                className="w-full p-2.5 border border-[#d1d9e2] rounded-lg bg-white text-sm text-[#112032] focus:outline-none focus:border-[#1d9e75] focus:ring-4 focus:ring-[#1d9e75]/10 transition-all resize-none"
+                value={formData.alamat}
+                onChange={(e) => setTextField('alamat', e.target.value)}
+                placeholder="Tuliskan alamat domisili lengkap Anda"
+                aria-invalid={Boolean(fieldErrors.alamat)}
+              ></textarea>
+              {fieldErrors.alamat && (
+                <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.alamat}</p>
+              )}
+            </div>
+
+            <div className="pt-1">
+              <label className="block text-sm font-semibold mb-1.5 text-[#112032]">Foto CV</label>
+              <ImageDropzone
+                accept="image/jpeg, image/png, image/jpg"
+                maxSize="2MB"
+                file={formData.foto_cv}
+                onChange={handleFileChange}
+                emptyText="Foto CV / resume"
+              />
+              {fieldErrors.foto_cv && (
+                <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.foto_cv}</p>
+              )}
+            </div>
+
+            {loading && (
+              <div className="pt-4 flex items-center justify-center text-[#1d9e75] font-medium text-sm">
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#1d9e75]"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Sedang memproses pengajuan...
+              </div>
+            )}
+          </form>
+        </Step>
+      </Stepper>
+    </div>
   )
 }
 

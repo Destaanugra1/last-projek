@@ -42,7 +42,7 @@ export const loginAction = async (_prev: AuthState, formData: FormData): Promise
     return { error: 'Email atau kata sandi salah. Silakan coba lagi.' }
   }
 
-  redirect('/profil')
+  redirect('/dashboard')
 }
 
 export const registerAction = async (_prev: AuthState, formData: FormData): Promise<AuthState> => {
@@ -87,11 +87,19 @@ export const registerAction = async (_prev: AuthState, formData: FormData): Prom
     return { error: 'Pendaftaran gagal. Silakan coba lagi.' }
   }
 
-  redirect('/profil')
+  redirect('/dashboard')
 }
 
 export const logoutAction = async () => {
   const cookieStore = await cookies()
+  // Explicitly clear with same options to ensure removal
+  cookieStore.set(AUTH_COOKIE, '', {
+    httpOnly: true,
+    maxAge: 0,
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  })
   cookieStore.delete(AUTH_COOKIE)
-  redirect('/login')
+  redirect('/')
 }

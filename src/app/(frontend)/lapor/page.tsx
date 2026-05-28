@@ -15,7 +15,11 @@ type LaporUser = { phone?: string | null; organization?: string | null; role?: s
 export default async function ReportFormPage() {
   const user = (await getCurrentUser()) as LaporUser | null
 
-  if (user?.role === 'user' || !user) {
+  if (!user) {
+    redirect('/api/auth/logout')
+  }
+
+  if (user.role === 'user') {
     redirect('/?error=unauthorized')
   }
 

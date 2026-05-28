@@ -1,4 +1,5 @@
 import { PhotoPreview as PhotoPreview_edc8c04ca9dd29165ceca9ebdf5e175d } from '@/components/admin/PhotoPreview'
+import { CVPreviewField as CVPreviewField_d94d845f1957d5cc291d6720f8ff94ac } from '@/components/admin/CVPreviewField'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -27,6 +28,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 /** @type import('payload').ImportMap */
 export const importMap = {
   "@/components/admin/PhotoPreview#PhotoPreview": PhotoPreview_edc8c04ca9dd29165ceca9ebdf5e175d,
+  "@/components/admin/CVPreviewField#CVPreviewField": CVPreviewField_d94d845f1957d5cc291d6720f8ff94ac,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,

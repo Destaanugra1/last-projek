@@ -111,30 +111,6 @@ export default async function HomePage() {
 
   return (
     <div className="lb-home">
-      <header className="lb-home__nav-wrap">
-        <nav className="lb-home__nav">
-          <div className="lb-home__brand-group">
-            <Link className="lb-home__brand" href="/">
-              LautBersih
-            </Link>
-            <div className="lb-home__links">
-              <Link className="is-active" href="/dashboard">
-                Dashboard
-              </Link>
-              <Link href="/profil">Armada</Link>
-              <Link href="/petawilayah">Peta Wilayah</Link>
-              {(userRole === 'admin' || userRole === 'reporter') && (
-                <Link href="/lapor">Dokumen</Link>
-              )}
-            </div>
-          </div>
-          {(userRole === 'admin' || userRole === 'reporter') && (
-            <Link className="lb-home__cta" href="/lapor">
-              Buat Laporan
-            </Link>
-          )}
-        </nav>
-      </header>
 
       <HomeHero
         badge={settings.heroBadge}
@@ -145,14 +121,7 @@ export default async function HomePage() {
         title={settings.heroTitle}
       />
 
-      {userRole === 'user' && user && (
-        <ReporterRegistrationCta
-          hasPendingApp={hasPendingApp}
-          steps={registrationSteps}
-          userId={user.id}
-        />
-      )}
-
+      
       {partners.length > 0 && (
         <section className="lb-home__partners">
           <div className="lb-home__partners-head">
@@ -187,12 +156,20 @@ export default async function HomePage() {
         </section>
       )}
 
+      {userRole === 'user' && user && (
+        <ReporterRegistrationCta
+          hasPendingApp={hasPendingApp}
+          steps={registrationSteps}
+          userId={user.id}
+        />
+      )}
+
+
       <section className="lb-home__stats-wrap">
         <div className="lb-home__stats-grid">
           <div className="lb-home__stat-card">
             <strong>{stats.total || 1284}</strong>
             <span>Total Laporan</span>
-            <small>Updated 2 mins ago</small>
           </div>
           <div className="lb-home__stat-card">
             <strong className="is-danger">{stats.criticalCount || 42}</strong>
@@ -219,9 +196,7 @@ export default async function HomePage() {
             visualisasi situasional yang lebih hidup dan futuristik.
           </p>
           <ul>
-            <li>Pelacakan Kapal Real-time</li>
             <li>Heatmap Polusi & Sampah</li>
-            <li>Batas Area Konservasi</li>
           </ul>
           <Link className="lb-home__hero-primary" href="/petawilayah">
             Buka Peta Wilayah
@@ -231,35 +206,7 @@ export default async function HomePage() {
         <LautBersihGlobe reports={reports} />
       </section>
 
-      <footer className="lb-home__footer">
-        <div className="lb-home__footer-grid">
-          <div>
-            <span className="lb-home__footer-brand">LautBersih</span>
-            <p>
-              Melindungi warisan maritim Indonesia melalui teknologi analisis real-time dan sistem
-              otoritas yang terintegrasi penuh.
-            </p>
-            <small>© 2024 LautBersih Maritime Authority.</small>
-          </div>
 
-          <div className="lb-home__footer-links">
-            <div>
-              <span>Internal</span>
-              <Link href="/dashboard">Dashboard Armada</Link>
-              <Link href="/petawilayah">Pusat Data Peta</Link>
-              {(userRole === 'admin' || userRole === 'reporter') && (
-                <Link href="/lapor">Protokol Respon</Link>
-              )}
-            </div>
-            <div>
-              <span>Legalitas</span>
-              <Link href="/profil">Kebijakan Privasi</Link>
-              <Link href="/profil">Syarat & Ketentuan</Link>
-              <Link href="/dashboard">Laporan Tahunan</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
 
       {(userRole === 'admin' || userRole === 'reporter') && (
         <Link className="lb-home__fab" href="/lapor">

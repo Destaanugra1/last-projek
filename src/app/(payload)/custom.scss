@@ -1,0 +1,27 @@
+.reporter-cv-preview-field {
+  width: 100%;
+}
+
+.reporter-cv-preview {
+  width: 100%;
+}
+
+.reporter-cv-preview__link {
+  min-height: 520px !important;
+}
+
+.reporter-cv-preview__image {
+  min-height: 488px !important;
+}
+
+@media (min-width: 1200px) {
+  .reporter-cv-preview__link {
+    min-height: 680px !important;
+    max-height: 85vh !important;
+  }
+
+  .reporter-cv-preview__image {
+    min-height: 648px !important;
+    max-height: calc(85vh - 32px) !important;
+  }
+}

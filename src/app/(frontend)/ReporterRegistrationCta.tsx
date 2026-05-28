@@ -24,16 +24,11 @@ export default function ReporterRegistrationCta({
     if (!isOpen) return
 
     const previousOverflow = document.body.style.overflow
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false)
-    }
 
     document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
 
@@ -66,9 +61,6 @@ export default function ReporterRegistrationCta({
           role="dialog"
           aria-modal="true"
           aria-label="Pendaftaran reporter"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setIsOpen(false)
-          }}
         >
           {hasPendingApp ? (
             <div className="lb-register-modal__pending">
@@ -98,14 +90,6 @@ export default function ReporterRegistrationCta({
             </div>
           ) : (
             <div className="lb-register-modal__content lb-register-modal__content--form">
-              <button
-                type="button"
-                className="lb-register-modal__close"
-                onClick={() => setIsOpen(false)}
-                aria-label="Tutup popup pendaftaran"
-              >
-                <X size={18} />
-              </button>
               <RegistrasiReporterClient
                 steps={steps}
                 userId={userId}

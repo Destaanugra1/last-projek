@@ -440,7 +440,7 @@
 }
 
 .lb-register-modal__content--form {
-  max-width: 520px;
+  max-width: 620px;
 }
 
 .lb-register-modal__close {
@@ -512,21 +512,22 @@
 }
 
 .lb-registration-card {
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: 0 18px 48px rgba(11, 37, 64, 0.18);
-  max-width: 500px;
+  max-width: 600px;
+  width: 100%;
 }
 
 .lb-registration-steps {
-  padding: 20px 56px 10px 22px;
+  padding: 24px 32px 12px;
 }
 
 .lb-registration-content {
-  padding: 0 22px 4px;
+  padding: 0 32px 8px;
 }
 
 .lb-registration-footer {
-  padding: 14px 22px;
+  padding: 16px 32px 24px;
 }
 
 @media (max-width: 640px) {

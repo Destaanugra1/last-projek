@@ -8,6 +8,12 @@ export const LogoutButton = ({ variant = 'topbar' }: { variant?: 'topbar' | 'sec
   const [isPending, startTransition] = useTransition()
 
   const handleLogout = () => {
+    // Clear any potential stale client-side auth data
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('payload-token')
+      window.sessionStorage.removeItem('payload-token')
+    }
+    
     startTransition(async () => {
       await logoutAction()
     })

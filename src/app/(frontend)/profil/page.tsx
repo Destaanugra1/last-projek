@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { AppShell } from '@/components/lautbersih/AppShell'
 import { LogoutButton } from '@/components/lautbersih/LogoutButton'
@@ -24,6 +25,11 @@ type ProfileUser = {
 
 export default async function ProfilPage() {
   const user = (await getCurrentUser()) as ProfileUser | null
+
+  if (!user) {
+    redirect('/api/auth/logout')
+  }
+
   const reports = await getReports(64)
   const stats = buildDashboardStats(reports)
 
@@ -247,7 +253,9 @@ export default async function ProfilPage() {
                 <p>Pelapor Aktif</p>
                 <small>10+ Laporan</small>
               </div>
-              <div className={`lb-profile-mini-badge${user?.verifiedVolunteer ? '' : ' is-locked'}`}>
+              <div
+                className={`lb-profile-mini-badge${user?.verifiedVolunteer ? '' : ' is-locked'}`}
+              >
                 <span>{user?.verifiedVolunteer ? '♥' : '🔒'}</span>
                 <p>Relawan Pesisir</p>
                 <small>Hadir 3 Agenda</small>

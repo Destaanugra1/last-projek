@@ -9,8 +9,12 @@ export const dynamic = 'force-dynamic'
 
 export default async function ReportsListPage() {
   const user = (await getCurrentUser()) as { role?: string } | null
-  
-  if (user?.role === 'user' || !user) {
+
+  if (!user) {
+    redirect('/api/auth/logout')
+  }
+
+  if (user.role === 'user') {
     redirect('/?error=unauthorized')
   }
 
@@ -23,14 +27,35 @@ export default async function ReportsListPage() {
       {/* Hero */}
       <div style={{ marginBottom: '40px' }}>
         <p className="lb-eyebrow">Semua Laporan · LautBersih</p>
-        <h1 style={{ color: 'var(--lb-primary)', fontSize: 'clamp(1.8rem,3vw,2.6rem)', margin: '8px 0 12px' }}>
+        <h1
+          style={{
+            color: 'var(--lb-primary)',
+            fontSize: 'clamp(1.8rem,3vw,2.6rem)',
+            margin: '8px 0 12px',
+          }}
+        >
           Daftar Laporan Pencemaran
         </h1>
-        <p style={{ color: 'var(--lb-text-soft)', fontSize: '1rem', lineHeight: 1.7, maxWidth: '560px' }}>
-          Seluruh laporan pencemaran pesisir yang dikirimkan oleh komunitas. Klik laporan untuk melihat
-          detail analisis AI, lokasi, dan status penanganan.
+        <p
+          style={{
+            color: 'var(--lb-text-soft)',
+            fontSize: '1rem',
+            lineHeight: 1.7,
+            maxWidth: '560px',
+          }}
+        >
+          Seluruh laporan pencemaran pesisir yang dikirimkan oleh komunitas. Klik laporan untuk
+          melihat detail analisis AI, lokasi, dan status penanganan.
         </p>
-        <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '20px' }}>
+        <div
+          style={{
+            alignItems: 'center',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginTop: '20px',
+          }}
+        >
           <span
             style={{
               background: 'rgba(226,75,74,0.08)',
@@ -80,7 +105,9 @@ export default async function ReportsListPage() {
             >
               <article className="lb-report-list-card">
                 {/* Badges */}
-                <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <div
+                  style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '8px' }}
+                >
                   <SeverityBadge severity={report.severity} />
                   <StatusBadge status={report.status} />
                   {report.category && (

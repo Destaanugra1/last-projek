@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { buildDashboardStats, getReports } from '@/lib/reports'
+import { getCurrentUser } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +19,12 @@ const statusClass: Record<string, string> = {
 }
 
 export default async function DashboardPage() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    redirect('/api/auth/logout')
+  }
+
   const reports = await getReports(100)
   const stats = buildDashboardStats(reports)
   const maxTimeline = Math.max(...stats.timeline.map((e) => e.total), 1)
@@ -180,11 +188,12 @@ export default async function DashboardPage() {
             {stats.byStatus.length > 0 ? (
               <div className="lb-dash-status">
                 {stats.byStatus.map((entry) => {
-                  const key = Object.entries({
-                    validated: 'Tervalidasi',
-                    resolved: 'Selesai',
-                    pending_review: 'Menunggu Review',
-                  }).find(([, v]) => v === entry.label)?.[0] ?? ''
+                  const key =
+                    Object.entries({
+                      validated: 'Tervalidasi',
+                      resolved: 'Selesai',
+                      pending_review: 'Menunggu Review',
+                    }).find(([, v]) => v === entry.label)?.[0] ?? ''
                   return (
                     <div
                       className={`lb-dash-status__row ${statusClass[key] ?? ''}`}
@@ -234,7 +243,9 @@ export default async function DashboardPage() {
                 return (
                   <div className="lb-dash-status__row" key={sev}>
                     <span>{label}</span>
-                    <strong style={{ background: `${severityColor[sev]}18`, color: severityColor[sev] }}>
+                    <strong
+                      style={{ background: `${severityColor[sev]}18`, color: severityColor[sev] }}
+                    >
                       {count}
                     </strong>
                   </div>
@@ -254,7 +265,15 @@ export default async function DashboardPage() {
               gap: '16px',
             }}
           >
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.7)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+            >
               Ikut Berkontribusi
             </p>
             <h2 style={{ color: '#fff', fontSize: '1.3rem' }}>Temukan titik pencemaran?</h2>

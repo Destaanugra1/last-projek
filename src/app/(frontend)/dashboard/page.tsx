@@ -151,12 +151,12 @@ export default async function DashboardPage() {
 
           {/* Critical alerts */}
           <div className="lb-dash-panel lb-dash-panel--dark">
-            <div className="lb-dash-panel__head">
+            <div className="lb-dash-panel__head ">
               <h2>Alert Prioritas</h2>
               <small>{alertReports.length} laporan</small>
             </div>
             {alertReports.length > 0 ? (
-              <div className="lb-dash-alerts">
+              <div className="lb-dash-alerts text-white">
                 {alertReports.map((r) => (
                   <Link
                     className={`lb-dash-alert${r.severity === 'medium' ? ' lb-dash-alert--medium' : ''}`}

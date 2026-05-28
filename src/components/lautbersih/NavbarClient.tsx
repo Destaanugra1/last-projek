@@ -127,7 +127,7 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
           </nav>
 
           {/* Desktop Actions - We'll add hidden md:flex here because by default they were visible on mobile */}
-          <div className="lb-global-nav__actions hidden md:flex">
+          <div className="lb-global-nav__actions lb-global-nav__actions--desktop">
             {user ? (
               <div className="lb-global-nav__user">
                 <Link className="lb-global-nav__user-chip" href="/profil">
@@ -183,7 +183,7 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
 
       {/* Mobile Drawer Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-[80vw] max-w-[320px] bg-[#0b2540] border-l border-white/10 shadow-2xl z-[55] flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
+        className={`lb-global-nav__drawer fixed top-0 right-0 h-full w-[80vw] max-w-[320px] bg-[#0b2540] border-l border-white/10 shadow-2xl z-[55] flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -262,6 +262,90 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .lb-global-nav {
+          z-index: 1200;
+        }
+
+        .lb-global-nav__inner {
+          gap: 0.75rem;
+          min-width: 0;
+        }
+
+        .lb-global-nav__brand {
+          min-width: 0;
+          flex-shrink: 1;
+        }
+
+        .lb-global-nav__brand-name {
+          min-width: 0;
+        }
+
+        .lb-global-nav__actions--desktop {
+          display: flex;
+          min-width: 0;
+          margin-left: auto;
+        }
+
+        .lb-global-nav__user {
+          min-width: 0;
+        }
+
+        .lb-global-nav__user-chip {
+          min-width: 0;
+          max-width: min(40vw, 220px);
+        }
+
+        .lb-global-nav__user-chip span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+          .lb-global-nav {
+            z-index: 1400;
+          }
+
+          .lb-global-nav__actions--desktop {
+            display: none;
+          }
+
+          .lb-global-nav__inner {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+          }
+
+          .lb-global-nav__brand,
+          .lb-global-nav__brand-name {
+            color: #fff;
+          }
+
+          .lb-global-nav__brand-name {
+            font-size: 1.05rem;
+          }
+
+          .lb-global-nav__drawer :global(a) {
+            color: #fff;
+          }
+
+          .lb-global-nav__drawer :global(span) {
+            color: inherit;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .lb-global-nav__inner {
+            gap: 0.55rem;
+          }
+
+          .lb-global-nav__brand-name {
+            font-size: 0.95rem;
+          }
+        }
+      `}</style>
     </>
   )
 }

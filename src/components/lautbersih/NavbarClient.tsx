@@ -119,11 +119,21 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
 
           {/* Desktop Nav - BEM CSS already hides this on mobile via .lb-global-nav__links { display: none } on max-width 768px */}
           <nav className="lb-global-nav__links">
-            {navLinks.map((link) => (
-              <Link key={link.href} className="lb-global-nav__link" href={link.href}>
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === '/'
+                  ? pathname === '/'
+                  : pathname === link.href || pathname.startsWith(link.href + '/')
+              return (
+                <Link
+                  key={link.href}
+                  className={`lb-global-nav__link${isActive ? ' is-active' : ''}`}
+                  href={link.href}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* Desktop Actions - We'll add hidden md:flex here because by default they were visible on mobile */}
@@ -192,16 +202,26 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
         </div>
 
         <div className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              className="flex items-center px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/10 focus:outline-none rounded-xl font-medium transition-colors"
-              href={link.href}
-              onClick={closeMenu}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive =
+              link.href === '/'
+                ? pathname === '/'
+                : pathname === link.href || pathname.startsWith(link.href + '/')
+            return (
+              <Link
+                key={link.href}
+                className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'text-white bg-yellow-500/10 border-l-2 border-yellow-500'
+                    : 'text-white/80 hover:text-white hover:bg-white/5 border-l-2 border-transparent'
+                }`}
+                href={link.href}
+                onClick={closeMenu}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
 
           <div className="mt-8 mb-4 border-t border-white/5" />
 

@@ -153,6 +153,7 @@
 
 .lb-reporting-map-preview--interactive {
   cursor: crosshair;
+  isolation: isolate;
   overflow: hidden;
 
   .leaflet-container {

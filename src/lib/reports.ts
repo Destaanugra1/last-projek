@@ -27,6 +27,11 @@ type RawReport = {
   locationLabel?: string | null
   longitude?: number | null
   photos?: Array<RelationDoc | number | string> | null
+  reportedBy?: {
+    avatarUrl?: string | null
+    fullName?: string | null
+    id?: number | string
+  } | null
   reporterName?: string | null
   severity?: 'low' | 'medium' | 'critical' | null
   slug?: string | null
@@ -58,6 +63,11 @@ export type FrontendReport = {
   longitude: number
   photoUrls: string[]
   recommendations: string[]
+  reportedBy: {
+    avatarUrl: string | null
+    fullName: string | null
+    id: string
+  } | null
   reporterName: string
   severity: 'critical' | 'low' | 'medium'
   slug: string
@@ -211,6 +221,14 @@ const normalizeReport = (doc: RawReport): FrontendReport => {
       ?.map((entry) => entry.item?.trim())
       .filter((entry): entry is string => Boolean(entry)) || fallbackRecommendations
 
+  const reportedByUser = doc.reportedBy
+    ? {
+        avatarUrl: doc.reportedBy.avatarUrl || null,
+        fullName: doc.reportedBy.fullName || null,
+        id: String(doc.reportedBy.id || ''),
+      }
+    : null
+
   return {
     category: normalizeCategory(doc.category),
     description: doc.description || 'Belum ada deskripsi laporan.',
@@ -223,6 +241,7 @@ const normalizeReport = (doc: RawReport): FrontendReport => {
       .map((photo) => normalizeMediaURL(photo))
       .filter((photo): photo is string => Boolean(photo)),
     recommendations,
+    reportedBy: reportedByUser,
     reporterName: doc.reporterName || 'Anonim',
     severity: doc.severity || 'medium',
     slug: doc.slug || String(doc.id || ''),
@@ -291,18 +310,29 @@ export const getWasteCategories = async (): Promise<FrontendCategory[]> => {
   }))
 }
 
+type ReportsWhere = {
+  reportedBy?: { equals: number | string }
+}
+
 export const getReports = async (
   limit = 12,
   sort: '-createdAt' | '-submittedAt' | '-updatedAt' = '-submittedAt',
+  where?: ReportsWhere,
 ): Promise<FrontendReport[]> => {
   const payload = await getPayloadClient()
-  const result = await payload.find({
+
+  const findOptions: Parameters<typeof payload.find>[0] = {
     collection: 'reports',
     depth: 2,
     limit,
     overrideAccess: false,
     sort,
-  })
+  }
+  if (where) {
+    findOptions.where = where as any
+  }
+
+  const result = await payload.find(findOptions)
 
   return result.docs.map((doc) => normalizeReport(doc as RawReport))
 }

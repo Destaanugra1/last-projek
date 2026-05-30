@@ -464,6 +464,20 @@
   grid-template-columns: minmax(0, 1fr) 320px;
 }
 
+.lb-profile-sidebar {
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  align-self: start;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lb-border) transparent;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: var(--lb-border); border-radius: 4px; }
+}
+
 .lb-profile-main,
 .lb-profile-sidebar {
   display: flex;
@@ -914,6 +928,9 @@
   .lb-profile-layout { grid-template-columns: 1fr; }
 
   .lb-profile-sidebar {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
     display: grid;
     gap: 22px;
     grid-template-columns: repeat(2, 1fr);

@@ -1,5 +1,14 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle,
+  ClipboardList,
+  Flag,
+  MapPin,
+  Waves,
+} from 'lucide-react'
 
 import { buildDashboardStats, getReports } from '@/lib/reports'
 import { getCurrentUser } from '@/lib/auth'
@@ -10,6 +19,30 @@ const severityColor: Record<string, string> = {
   critical: '#e24b4a',
   medium: '#ef9f27',
   low: '#1d9e75',
+}
+
+const severityMeta: Record<
+  string,
+  { icon: React.ReactNode; label: string; color: string; bg: string }
+> = {
+  critical: {
+    icon: <MapPin size={14} color="#e24b4a" />,
+    label: 'Kritis',
+    color: '#e24b4a',
+    bg: 'rgba(226,75,74,0.1)',
+  },
+  medium: {
+    icon: <MapPin size={14} color="#ef9f27" />,
+    label: 'Moderat',
+    color: '#ef9f27',
+    bg: 'rgba(239,159,39,0.1)',
+  },
+  low: {
+    icon: <MapPin size={14} color="#1d9e75" />,
+    label: 'Rendah',
+    color: '#1d9e75',
+    bg: 'rgba(29,158,117,0.1)',
+  },
 }
 
 const statusClass: Record<string, string> = {
@@ -45,7 +78,7 @@ export default async function DashboardPage() {
       {/* ── Hero ── */}
       <div className="lb-dash-hero">
         <div className="lb-dash-hero__eyebrow">
-          <span>🌊</span>
+          <Waves size={16} />
           SDG 14 · Life Below Water
         </div>
         <h1>Dashboard Ringkasan</h1>
@@ -54,7 +87,10 @@ export default async function DashboardPage() {
           wilayah terdampak secara real-time dari seluruh kontributor LautBersih.
         </p>
         <div className="lb-dash-hero__meta">
-          <span className="lb-dash-hero__pill">📊 {stats.total} Total Laporan</span>
+          <span className="lb-dash-hero__pill">
+            <BarChart3 size={14} />
+            {stats.total} Total Laporan
+          </span>
           <span className="lb-dash-hero__live">
             <i />
             Diperbarui {now}
@@ -68,25 +104,25 @@ export default async function DashboardPage() {
           <div className="lb-dash-kpi__label">Total Laporan</div>
           <span className="lb-dash-kpi__value">{stats.total}</span>
           <div className="lb-dash-kpi__sub">Seluruh laporan masuk</div>
-          <span className="lb-dash-kpi__icon">📋</span>
+          <ClipboardList className="lb-dash-kpi__icon" size={48} />
         </div>
         <div className="lb-dash-kpi lb-dash-kpi--critical">
           <div className="lb-dash-kpi__label">Kritis Aktif</div>
           <span className="lb-dash-kpi__value">{stats.criticalCount}</span>
           <div className="lb-dash-kpi__sub">Perlu penanganan segera</div>
-          <span className="lb-dash-kpi__icon">🚨</span>
+          <AlertTriangle className="lb-dash-kpi__icon" size={48} />
         </div>
         <div className="lb-dash-kpi lb-dash-kpi--warning">
           <div className="lb-dash-kpi__label">Tervalidasi AI</div>
           <span className="lb-dash-kpi__value">{stats.validatedCount}</span>
           <div className="lb-dash-kpi__sub">Sudah diverifikasi admin</div>
-          <span className="lb-dash-kpi__icon">✅</span>
+          <CheckCircle className="lb-dash-kpi__icon" size={48} />
         </div>
         <div className="lb-dash-kpi lb-dash-kpi--blue">
           <div className="lb-dash-kpi__label">Selesai Ditangani</div>
           <span className="lb-dash-kpi__value">{stats.resolvedCount}</span>
           <div className="lb-dash-kpi__sub">Laporan tuntas</div>
-          <span className="lb-dash-kpi__icon">🏁</span>
+          <Flag className="lb-dash-kpi__icon" size={48} />
         </div>
       </div>
 
@@ -151,21 +187,34 @@ export default async function DashboardPage() {
 
           {/* Critical alerts */}
           <div className="lb-dash-panel lb-dash-panel--dark">
-            <div className="lb-dash-panel__head ">
+            <div className="lb-dash-panel__head">
               <h2>Alert Prioritas</h2>
               <small>{alertReports.length} laporan</small>
             </div>
             {alertReports.length > 0 ? (
-              <div className="lb-dash-alerts text-white">
+              <div className="lb-dash-alerts">
                 {alertReports.map((r) => (
                   <Link
                     className={`lb-dash-alert${r.severity === 'medium' ? ' lb-dash-alert--medium' : ''}`}
                     href={`/laporan/${r.slug}`}
                     key={r.id}
                   >
-                    <strong>{r.title}</strong>
-                    <span>
-                      📍 {r.locationLabel} · {r.severity.toUpperCase()}
+                    <div className="lb-dash-alert__head">
+                      <strong>{r.title}</strong>
+                      <span
+                        className={`lb-dash-alert__badge lb-dash-alert__badge--${r.severity}`}
+                      >
+                        {r.severity === 'critical' ? (
+                          <AlertTriangle size={10} />
+                        ) : (
+                          <AlertTriangle size={10} />
+                        )}
+                        {r.severity.toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="lb-dash-alert__location">
+                      <MapPin size={12} />
+                      {r.locationLabel}
                     </span>
                   </Link>
                 ))}
@@ -199,7 +248,10 @@ export default async function DashboardPage() {
                       className={`lb-dash-status__row ${statusClass[key] ?? ''}`}
                       key={entry.label}
                     >
-                      <span>{entry.label}</span>
+                      <span>
+                        {key === 'validated' && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
+                        {entry.label}
+                      </span>
                       <strong>{entry.total}</strong>
                     </div>
                   )
@@ -239,12 +291,18 @@ export default async function DashboardPage() {
             <div className="lb-dash-status">
               {(['critical', 'medium', 'low'] as const).map((sev) => {
                 const count = reports.filter((r) => r.severity === sev).length
-                const label = { critical: '🔴 Kritis', medium: '🟡 Moderat', low: '🟢 Rendah' }[sev]
+                const meta = severityMeta[sev]
                 return (
                   <div className="lb-dash-status__row" key={sev}>
-                    <span>{label}</span>
+                    <span className="lb-dash-severity-label">
+                      <span
+                        className="lb-dash-severity-dot"
+                        style={{ background: meta.color }}
+                      />
+                      {meta.label}
+                    </span>
                     <strong
-                      style={{ background: `${severityColor[sev]}18`, color: severityColor[sev] }}
+                      style={{ background: meta.bg, color: meta.color }}
                     >
                       {count}
                     </strong>
@@ -255,46 +313,15 @@ export default async function DashboardPage() {
           </div>
 
           {/* CTA */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, var(--lb-primary), var(--lb-primary-soft))',
-              borderRadius: '20px',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-          >
-            <p
-              style={{
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Ikut Berkontribusi
-            </p>
-            <h2 style={{ color: '#fff', fontSize: '1.3rem' }}>Temukan titik pencemaran?</h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+          <div className="lb-dash-cta">
+            <p className="lb-dash-cta__label">Ikut Berkontribusi</p>
+            <h2 className="lb-dash-cta__title">Temukan titik pencemaran?</h2>
+            <p className="lb-dash-cta__desc">
               Laporkan sekarang dan bantu tim kami menangani polusi pesisir lebih cepat.
             </p>
-            <Link
-              href="/lapor"
-              style={{
-                alignItems: 'center',
-                background: 'var(--lb-secondary)',
-                borderRadius: '12px',
-                color: '#fff',
-                display: 'inline-flex',
-                fontWeight: 700,
-                justifyContent: 'center',
-                minHeight: '44px',
-                padding: '0 24px',
-              }}
-            >
-              Buat Laporan →
+            <Link className="lb-dash-cta__btn" href="/lapor">
+              Buat Laporan
+              <span className="lb-dash-cta__arrow">&rarr;</span>
             </Link>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { uploadToCloudinary } from '@/lib/cloudinary'
 import { generateBlogPostFromReport, generateBlogSlug } from '@/lib/generateBlogPost'
 import { getPayloadClient } from '@/lib/getPayloadClient'
+import { getCurrentUser } from '@/lib/auth'
 
 const toNumber = (value: FormDataEntryValue | null, fallback: number) => {
   const numeric = Number(value)
@@ -14,6 +15,8 @@ const toNumber = (value: FormDataEntryValue | null, fallback: number) => {
 
 export const submitReport = async (formData: FormData) => {
   const payload = await getPayloadClient()
+
+  const currentUser = await getCurrentUser()
 
   const title = String(formData.get('title') || '').trim()
   const reporterName = String(formData.get('reporterName') || '').trim()
@@ -24,6 +27,11 @@ export const submitReport = async (formData: FormData) => {
   const estimatedVolume = String(formData.get('estimatedVolume') || '').trim()
   const latitude = toNumber(formData.get('latitude'), -6.2088)
   const longitude = toNumber(formData.get('longitude'), 106.8456)
+
+  // Server-side guard: reject if photo out of context
+  if (String(formData.get('isOutOfContext') || '') === 'true') {
+    throw new Error('Foto tidak relevan dengan lingkungan laut atau pantai.')
+  }
 
   // AI vision analysis result (from frontend Generate Deskripsi)
   const aiSeverityTone = String(formData.get('aiSeverityTone') || '').trim()
@@ -125,6 +133,7 @@ export const submitReport = async (formData: FormData) => {
     locationLabel,
     longitude,
     photos: uploadedMediaIds,
+    reportedBy: currentUser?.id,
     reporterEmail: reporterEmail || undefined,
     reporterName,
     severity: aiSeverity ?? 'medium',

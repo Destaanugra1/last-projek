@@ -1,6 +1,21 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  CheckCircle,
+  Circle,
+  FileText,
+  Flag,
+  Heart,
+  Lock,
+  LogOut,
+  Megaphone,
+  Shield,
+  User,
+} from 'lucide-react'
 
 import { AppShell } from '@/components/lautbersih/AppShell'
 import { LogoutButton } from '@/components/lautbersih/LogoutButton'
@@ -30,7 +45,9 @@ export default async function ProfilPage() {
     redirect('/api/auth/logout')
   }
 
-  const reports = await getReports(64)
+  const reports = await getReports(64, '-submittedAt', {
+    reportedBy: { equals: user.id },
+  })
   const stats = buildDashboardStats(reports)
 
   const myReports = reports.slice(0, 5)
@@ -72,7 +89,7 @@ export default async function ProfilPage() {
           <h1>{displayName}</h1>
           <div className="lb-profile-header__meta-row">
             <span className="lb-profile-sdg-chip">
-              <span>●</span> SDG 14 · Life Below Water
+              <Circle size={8} fill="currentColor" /> SDG 14 · Life Below Water
             </span>
             {user?.organization && (
               <>
@@ -97,7 +114,9 @@ export default async function ProfilPage() {
 
       {!isProfileComplete && (
         <div className="lb-profile-incomplete-notice">
-          <div className="lb-profile-incomplete-notice__icon">⚠️</div>
+          <div className="lb-profile-incomplete-notice__icon">
+            <AlertTriangle size={20} />
+          </div>
           <div>
             <strong>Profil belum lengkap</strong>
             <p>
@@ -112,7 +131,7 @@ export default async function ProfilPage() {
         <div className="lb-profile-main">
           <div className="lb-panel lb-profile-info-card">
             <div className="lb-profile-section-head">
-              <span className="lb-profile-section-icon">👤</span>
+              <User size={18} />
               <h2>Informasi Akun</h2>
             </div>
             <div className="lb-profile-info-grid">
@@ -145,7 +164,9 @@ export default async function ProfilPage() {
               <div className="lb-profile-info-item">
                 <label>Status Relawan</label>
                 {user?.verifiedVolunteer ? (
-                  <span className="lb-profile-verified-badge">✓ Terverifikasi</span>
+                  <span className="lb-profile-verified-badge">
+                    <Check size={14} /> Terverifikasi
+                  </span>
                 ) : (
                   <span className="lb-profile-info-empty">Belum terverifikasi</span>
                 )}
@@ -155,11 +176,13 @@ export default async function ProfilPage() {
 
           <div className="lb-panel lb-profile-reports-card">
             <div className="lb-profile-section-head">
-              <span className="lb-profile-section-icon">📋</span>
-              <h2>Laporan Terbaru</h2>
-              <Link className="lb-text-link lb-profile-section-head__link" href="/laporan">
-                Lihat Semua →
-              </Link>
+              <FileText size={18} />
+              <h2>Laporan Anda</h2>
+              {myReportCount > 0 && (
+                <Link className="lb-text-link lb-profile-section-head__link" href="/laporan">
+                  Lihat Semua <ArrowRight size={14} />
+                </Link>
+              )}
             </div>
             {myReports.length > 0 ? (
               <div className="lb-profile-report-list">
@@ -212,28 +235,28 @@ export default async function ProfilPage() {
                   <span>Total Laporan</span>
                   <strong>{myReportCount}</strong>
                 </div>
-                <span className="lb-profile-stat-row__icon">📝</span>
+                <FileText size={18} className="lb-profile-stat-row__icon" />
               </div>
               <div className="lb-profile-stat-row">
                 <div>
                   <span>Tervalidasi</span>
                   <strong>{myValidatedCount}</strong>
                 </div>
-                <span className="lb-profile-stat-row__icon">✅</span>
+                <CheckCircle size={18} className="lb-profile-stat-row__icon" />
               </div>
               <div className="lb-profile-stat-row">
                 <div>
                   <span>Diselesaikan</span>
                   <strong>{myResolvedCount}</strong>
                 </div>
-                <span className="lb-profile-stat-row__icon">🏁</span>
+                <Flag size={18} className="lb-profile-stat-row__icon" />
               </div>
               <div className="lb-profile-stat-row lb-profile-stat-row--alert">
                 <div>
                   <span>Critical</span>
                   <strong>{myCriticalCount}</strong>
                 </div>
-                <span className="lb-profile-stat-row__icon">🚨</span>
+                <AlertTriangle size={18} className="lb-profile-stat-row__icon" />
               </div>
             </div>
           </div>
@@ -241,7 +264,9 @@ export default async function ProfilPage() {
           <div className="lb-panel lb-profile-badge-card">
             <h3 className="lb-eyebrow">Badge Status</h3>
             <div className="lb-profile-badge-hero">
-              <div className="lb-profile-badge-hero__icon">🛡</div>
+              <div className="lb-profile-badge-hero__icon">
+                <Shield size={28} />
+              </div>
               <div>
                 <strong>Senior Guardian</strong>
                 <small>Diberikan untuk 500+ jam pengabdian</small>
@@ -249,24 +274,24 @@ export default async function ProfilPage() {
             </div>
             <div className="lb-profile-badge-grid">
               <div className={`lb-profile-mini-badge${myReportCount >= 10 ? '' : ' is-locked'}`}>
-                <span>{myReportCount >= 10 ? '📣' : '🔒'}</span>
+                <span>{myReportCount >= 10 ? <Megaphone size={26} /> : <Lock size={26} />}</span>
                 <p>Pelapor Aktif</p>
                 <small>10+ Laporan</small>
               </div>
               <div
                 className={`lb-profile-mini-badge${user?.verifiedVolunteer ? '' : ' is-locked'}`}
               >
-                <span>{user?.verifiedVolunteer ? '♥' : '🔒'}</span>
+                <span>{user?.verifiedVolunteer ? <Heart size={26} /> : <Lock size={26} />}</span>
                 <p>Relawan Pesisir</p>
                 <small>Hadir 3 Agenda</small>
               </div>
               <div className="lb-profile-mini-badge is-locked">
-                <span>🔒</span>
+                <span><Lock size={26} /></span>
                 <p>Mata Elang</p>
                 <small>50+ Verifikasi</small>
               </div>
               <div className="lb-profile-mini-badge is-locked">
-                <span>🔒</span>
+                <span><Lock size={26} /></span>
                 <p>Penjaga Karang</p>
                 <small>Khusus Wilayah</small>
               </div>
@@ -297,7 +322,7 @@ export default async function ProfilPage() {
             <div className="lb-profile-security-list">
               <div className="lb-profile-security-divider" />
               <div className="lb-profile-security-row lb-profile-security-row--danger">
-                <span className="lb-profile-security-row__icon">↩</span>
+                <LogOut size={18} className="lb-profile-security-row__icon" />
                 <LogoutButton variant="security" />
               </div>
             </div>

@@ -74,7 +74,11 @@ const pickAnalysisKey = (label: string) => {
     return 'oil'
   }
 
-  if (normalized.includes('waste') || normalized.includes('debris') || normalized.includes('sampah')) {
+  if (
+    normalized.includes('waste') ||
+    normalized.includes('debris') ||
+    normalized.includes('sampah')
+  ) {
     return 'waste'
   }
 
@@ -125,14 +129,15 @@ const parseCoordinates = (value: string) => {
   }
 }
 
-const ReportSubmitButton = () => {
+const ReportSubmitButton = ({ disabled = false }: { disabled?: boolean }) => {
   const { pending } = useFormStatus()
+  const isDisabled = pending || disabled
 
   return (
     <button
-      aria-disabled={pending}
+      aria-disabled={isDisabled}
       className={`lb-reporting-submit${pending ? ' is-loading' : ''}`}
-      disabled={pending}
+      disabled={isDisabled}
       type="submit"
     >
       {pending ? (
@@ -164,6 +169,7 @@ export const ReportFormExperience = ({
   const [description, setDescription] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [genDescError, setGenDescError] = useState<string | null>(null)
+  const [isOutOfContext, setIsOutOfContext] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isAiPending, startAiTransition] = useTransition()
   const [isGenPending, startGenTransition] = useTransition()
@@ -284,6 +290,8 @@ export const ReportFormExperience = ({
   const onPhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : []
     setPhotos(files)
+    setIsOutOfContext(false)
+    setGenDescError(null)
   }
 
   const onGenerateDescription = () => {
@@ -316,19 +324,49 @@ export const ReportFormExperience = ({
           coordinates,
         })
 
+        // Check if photo is out of context (not ocean/beach related)
+        if (result.categoryLabel === 'Tidak Relevan') {
+          setIsOutOfContext(true)
+          setAnalysisState({
+            categoryLabel: result.categoryLabel,
+            confidence: result.confidence,
+            error: null,
+            items: [],
+            phase: 'ready',
+            severity: result.severity,
+            severityTone: result.severityTone,
+            summary: result.summary,
+          })
+          return
+        }
+        setIsOutOfContext(false)
         setDescription(result.description)
 
         // Auto-match AI category to one of the available chips
         const aiCatNorm = result.categoryLabel.toLowerCase()
         const matchedChip = chips.find((c) => {
           const t = c.title.toLowerCase()
-          if (aiCatNorm.includes('plastik') || aiCatNorm.includes('sampah') || aiCatNorm.includes('debris') || aiCatNorm.includes('waste'))
-            return t.includes('plastik') || t.includes('sampah') || t.includes('debris') || t.includes('waste')
+          if (
+            aiCatNorm.includes('plastik') ||
+            aiCatNorm.includes('sampah') ||
+            aiCatNorm.includes('debris') ||
+            aiCatNorm.includes('waste')
+          )
+            return (
+              t.includes('plastik') ||
+              t.includes('sampah') ||
+              t.includes('debris') ||
+              t.includes('waste')
+            )
           if (aiCatNorm.includes('minyak') || aiCatNorm.includes('oil'))
             return t.includes('minyak') || t.includes('oil')
           if (aiCatNorm.includes('industri') || aiCatNorm.includes('limbah'))
             return t.includes('industri') || t.includes('limbah')
-          if (aiCatNorm.includes('ekosistem') || aiCatNorm.includes('karang') || aiCatNorm.includes('ecosystem'))
+          if (
+            aiCatNorm.includes('ekosistem') ||
+            aiCatNorm.includes('karang') ||
+            aiCatNorm.includes('ecosystem')
+          )
             return t.includes('ekosistem') || t.includes('karang') || t.includes('ecosystem')
           if (aiCatNorm.includes('ilegal') || aiCatNorm.includes('illegal'))
             return t.includes('ilegal') || t.includes('illegal')
@@ -373,28 +411,27 @@ export const ReportFormExperience = ({
     return null
   })()
 
-  const locationLabel = coordinates ? `Koordinat ${coordinates}` : title || 'Titik Laporan LautBersih'
+  const locationLabel = coordinates
+    ? `Koordinat ${coordinates}`
+    : title || 'Titik Laporan LautBersih'
   const confidenceWidth = analysisState.phase === 'ready' ? analysisState.confidence : '0%'
 
   return (
     <div className="lb-reporting-page">
-      <header className="lb-reporting-hero">
-        <div className="lb-reporting-hero__inner">
-          <div className="lb-reporting-sdg">SDG 14 · Life Below Water</div>
-          <h1>Buat Laporan Baru</h1>
-          <p>
-            Sistem Pelaporan Maritim Terpadu. Masukkan detail temuan untuk analisis AI real-time
-            dan respon operasional cepat demi keberlangsungan ekosistem laut Indonesia.
-          </p>
-        </div>
-      </header>
-
       <main className="lb-reporting-main">
         <div className="lb-reporting-grid">
           <section className="lb-reporting-form-card">
             <form
               action={async (fd) => {
                 setSubmitError(null)
+
+                // Validation: foto tidak boleh di luar konteks laut/pantai
+                if (isOutOfContext) {
+                  setSubmitError(
+                    'Foto tidak relevan dengan lingkungan laut atau pantai. Harap unggah foto yang sesuai.',
+                  )
+                  return
+                }
 
                 // Validation: koordinat wajib diatur (bukan default)
                 if (!coordinates.trim()) {
@@ -404,7 +441,11 @@ export const ReportFormExperience = ({
                   return
                 }
                 const parts = coordinates.split(',').map((s) => Number(s.trim()))
-                if (parts.length !== 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+                if (
+                  parts.length !== 2 ||
+                  !Number.isFinite(parts[0]) ||
+                  !Number.isFinite(parts[1])
+                ) {
                   setSubmitError('Format koordinat tidak valid. Contoh: -6.1751, 106.8272')
                   return
                 }
@@ -421,12 +462,37 @@ export const ReportFormExperience = ({
               <input name="reporterName" type="hidden" value="Pelapor LautBersih" />
               <input name="reporterEmail" type="hidden" value="" />
               {/* AI analysis result — sent to server only when ready */}
-              <input name="aiSeverityTone" type="hidden" value={analysisState.phase === 'ready' ? analysisState.severityTone : ''} />
-              <input name="aiSeverityLabel" type="hidden" value={analysisState.phase === 'ready' ? analysisState.severity : ''} />
-              <input name="aiCategoryLabel" type="hidden" value={analysisState.phase === 'ready' ? analysisState.categoryLabel : ''} />
-              <input name="aiConfidence" type="hidden" value={analysisState.phase === 'ready' ? analysisState.confidence : ''} />
-              <input name="aiSummary" type="hidden" value={analysisState.phase === 'ready' ? (analysisState.summary ?? '') : ''} />
-              <input name="aiRecommendations" type="hidden" value={analysisState.phase === 'ready' ? JSON.stringify(analysisState.items) : ''} />
+              <input
+                name="aiSeverityTone"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? analysisState.severityTone : ''}
+              />
+              <input
+                name="aiSeverityLabel"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? analysisState.severity : ''}
+              />
+              <input
+                name="aiCategoryLabel"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? analysisState.categoryLabel : ''}
+              />
+              <input
+                name="aiConfidence"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? analysisState.confidence : ''}
+              />
+              <input
+                name="aiSummary"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? (analysisState.summary ?? '') : ''}
+              />
+              <input
+                name="aiRecommendations"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? JSON.stringify(analysisState.items) : ''}
+              />
+              <input name="isOutOfContext" type="hidden" value={isOutOfContext ? 'true' : ''} />
 
               <div className="lb-reporting-field">
                 <label htmlFor="report-title">Judul Laporan</label>
@@ -527,14 +593,20 @@ export const ReportFormExperience = ({
                   type="button"
                 >
                   {isGenPending ? (
-                    <><span className="lb-reporting-gen-btn__spinner" /> Menganalisis foto...</>
+                    <>
+                      <span className="lb-reporting-gen-btn__spinner" /> Menganalisis foto...
+                    </>
                   ) : (
                     <>✦ Generate Deskripsi dari Foto</>
                   )}
                 </button>
-                {genDescError && (
-                  <p className="lb-reporting-gen-btn__error">{genDescError}</p>
+                {isOutOfContext && (
+                  <p className="lb-reporting-gen-btn__error lb-reporting-gen-btn__error--out-of-context">
+                    ✕ Maaf, foto ini di luar konteks LautBersih. Harap unggah foto yang menunjukkan
+                    lingkungan laut, pantai, atau pesisir.
+                  </p>
                 )}
+                {genDescError && <p className="lb-reporting-gen-btn__error">{genDescError}</p>}
               </div>
 
               {submitError && (
@@ -544,11 +616,11 @@ export const ReportFormExperience = ({
                 </div>
               )}
 
-              <ReportSubmitButton />
+              <ReportSubmitButton disabled={isOutOfContext} />
             </form>
           </section>
 
-            <aside className="lb-reporting-sidebar">
+          <aside className="lb-reporting-sidebar">
             <div className="lb-reporting-ai-card">
               <div className="lb-reporting-ai-card__scanline" />
               <div className="lb-reporting-ai-card__head">
@@ -597,11 +669,7 @@ export const ReportFormExperience = ({
               {analysisState.phase === 'error' && (
                 <div className="lb-reporting-ai-card__status">
                   <p className="lb-reporting-ai-card__error">{analysisState.error}</p>
-                  <button
-                    className="lb-reporting-ai-scan-btn"
-                    onClick={onManualScan}
-                    type="button"
-                  >
+                  <button className="lb-reporting-ai-scan-btn" onClick={onManualScan} type="button">
                     <span>↺</span> Coba Lagi
                   </button>
                 </div>
@@ -669,7 +737,7 @@ export const ReportFormExperience = ({
 
             <div className="lb-reporting-guidelines">
               <h3>
-                <span className="lb-reporting-symbol">§</span>
+                <span className="lb-reporting-symbol"></span>
                 PANDUAN PELAPORAN
               </h3>
               <ul>

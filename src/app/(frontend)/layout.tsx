@@ -35,7 +35,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang="id">
-      <body className={`${dmSans.variable} ${playfair.variable} ${inter.variable}`}>
+      <body className={`${dmSans.variable} ${playfair.variable} ${inter.variable}`} suppressHydrationWarning>
         <Navbar />
         {children}
         <Footer />

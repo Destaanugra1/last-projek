@@ -27,16 +27,25 @@ export const analyzePhotoComplete = async (data: {
   if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+  const MODELS = ['gemini-2.5-flash']
 
   const ctx = [
     data.title ? `- Judul: ${data.title}` : null,
     data.coordinates ? `- Koordinat: ${data.coordinates}` : null,
   ].filter(Boolean).join('\n')
 
-  const prompt = `Anda adalah sistem AI LautBersih Indonesia. Analisis foto pesisir/laut ini.
+  const prompt = `Anda adalah sistem AI LautBersih Indonesia. Analisis foto ini.
 
-PEDOMAN KLASIFIKASI (WAJIB):
+LANGKAH PERTAMA - DETEKSI KONTEKS:
+Tentukan apakah foto ini mengandung unsur LAUT, PANTAI, atau PESISIR (air laut, pasir pantai, gelombang, kapal, terumbu karang, biota laut, sampah di pantai, dll).
+
+JIKA foto SAMA SEKALI TIDAK mengandung unsur laut/pantai/pesisir (mis. foto orang, bangunan dalam ruangan, kendaraan darat, hewan darat, makanan, dokumen, pemandangan gunung/hutan, dll):
+  categoryLabel = "Tidak Relevan"
+  severity = "LUAR KONTEKS"
+  severityTone = "safe"
+  confidence = "99%"
+
+JIKA foto mengandung unsur laut/pantai/pesisir, gunakan PEDOMAN KLASIFIKASI berikut:
 - Pantai/laut BERSIH (air jernih, tidak ada sampah) → severity "WASPADA (LEVEL 1)", tone "safe"
 - Sedikit sampah terserak → "MODERAT (LEVEL 2)", tone "moderate"
 - Sampah banyak menumpuk → "SERIUS (LEVEL 3)", tone "critical"
@@ -45,9 +54,9 @@ ${ctx ? `\nKonteks:\n${ctx}\n` : ''}
 Kembalikan HANYA JSON:
 {
   "description": "<2-4 kalimat Bahasa Indonesia deskripsi visual foto>",
-  "categoryLabel": "<Sampah Plastik | Tumpahan Minyak | Limbah Industri | Sampah Organik | Kondisi Pantai Bersih | Kerusakan Ekosistem>",
+  "categoryLabel": "<Tidak Relevan | Sampah Plastik | Tumpahan Minyak | Limbah Industri | Sampah Organik | Kondisi Pantai Bersih | Kerusakan Ekosistem>",
   "confidence": "<persentase, contoh 91.3%>",
-  "severity": "<WASPADA (LEVEL 1) | MODERAT (LEVEL 2) | SERIUS (LEVEL 3) | KRITIS (LEVEL 4)>",
+  "severity": "<LUAR KONTEKS | WASPADA (LEVEL 1) | MODERAT (LEVEL 2) | SERIUS (LEVEL 3) | KRITIS (LEVEL 4)>",
   "severityTone": "<safe | moderate | critical>",
   "summary": "<ringkasan 1-2 kalimat>",
   "recommendations": ["<tindakan 1>", "<tindakan 2>", "<tindakan 3>"]
@@ -87,7 +96,7 @@ export const generateDescriptionFromPhoto = async (data: {
   if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+  const MODELS = ['gemini-2.5-flash']
 
   const prompt = `Anda adalah sistem AI analisis pencemaran pesisir untuk platform LautBersih Indonesia.
 Perhatikan foto ini dengan seksama dan berikan deskripsi kondisi pencemaran atau insiden lingkungan yang terlihat.
@@ -140,7 +149,7 @@ export const analyzeWithGeminiVision = async (data: {
   if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+  const MODELS = ['gemini-2.5-flash']
 
   const contextLines = [
     data.title ? `- Judul: ${data.title}` : null,

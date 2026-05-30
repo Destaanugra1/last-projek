@@ -13,6 +13,7 @@ body {
   color: var(--lb-text);
   font-family: var(--font-dm-sans), 'Segoe UI', sans-serif;
   margin: 0;
+  overflow-x: hidden;
 }
 
 main {
@@ -481,7 +482,6 @@ p {
   flex-direction: column;
   gap: 22px;
   min-width: 0;
-  overflow: hidden;
   padding: 22px;
 }
 

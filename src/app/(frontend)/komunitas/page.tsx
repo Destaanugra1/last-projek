@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 import { AppShell } from '@/components/lautbersih/AppShell'
@@ -17,33 +18,53 @@ const severityDot: Record<string, string> = {
   low: '#1d9e75',
 }
 
-// ── Badge tier computed from report count ─────────────────────────────────────
-// Admin can override this in the future via a User.badge field
 function getBadgeTier(count: number): { label: string; cls: string } {
   if (count >= 20) return { label: 'Elite', cls: 'elite' }
   if (count >= 10) return { label: 'Inti', cls: 'inti' }
-  if (count >= 3)  return { label: 'Aktif', cls: 'aktif' }
+  if (count >= 3) return { label: 'Aktif', cls: 'aktif' }
   return { label: 'Baru', cls: 'baru' }
 }
 
 const rankCls = ['is-gold', 'is-silver', 'is-bronze']
 
+type ContributorEntry = {
+  avatarUrl: string | null
+  count: number
+  displayName: string
+  initials: string
+  userId: string
+}
+
 export default async function KomunitasPage() {
   const reports = await getReports(100)
   const stats = buildDashboardStats(reports)
 
-  const reporterMap = new Map<string, number>()
+  // Build contributor map keyed by reportedBy user ID
+  const contributorMap = new Map<string, ContributorEntry>()
   reports.forEach((r) => {
-    reporterMap.set(r.reporterName, (reporterMap.get(r.reporterName) || 0) + 1)
+    const userId = r.reportedBy?.id || `anon-${r.reporterName}`
+    const existing = contributorMap.get(userId)
+    if (existing) {
+      existing.count++
+    } else {
+      const fullName = r.reportedBy?.fullName || r.reporterName
+      contributorMap.set(userId, {
+        avatarUrl: r.reportedBy?.avatarUrl || null,
+        count: 1,
+        displayName: fullName,
+        initials: fullName.slice(0, 2).toUpperCase(),
+        userId,
+      })
+    }
   })
-  const topContributors = Array.from(reporterMap.entries())
-    .map(([name, count]) => ({ count, name }))
+
+  const topContributors = Array.from(contributorMap.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, 8)
 
-  // Map reporter name → tier for activity feed attribution
-  const reporterTierMap = new Map(
-    topContributors.map((c) => [c.name, getBadgeTier(c.count)]),
+  // Map userId → tier for activity feed attribution
+  const contributorTierMap = new Map(
+    topContributors.map((c) => [c.userId, getBadgeTier(c.count)]),
   )
 
   const recentReports = reports.slice(0, 8)
@@ -100,17 +121,27 @@ export default async function KomunitasPage() {
                 return (
                   <li
                     className={`lb-kom-board__row${i < 3 ? ' is-featured' : ''}`}
-                    key={c.name}
+                    key={c.userId}
                   >
                     <span className={`lb-kom-board__num${rankCls[i] ? ` ${rankCls[i]}` : ''}`}>
                       {i + 1}
                     </span>
                     <div className="lb-kom-board__avatar">
-                      {c.name.slice(0, 2).toUpperCase()}
+                      {c.avatarUrl ? (
+                        <Image
+                          alt={c.displayName}
+                          fill
+                          sizes="40px"
+                          src={c.avatarUrl}
+                          style={{ borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        c.initials
+                      )}
                     </div>
                     <div className="lb-kom-board__info">
                       <div className="lb-kom-board__name-row">
-                        <strong>{c.name}</strong>
+                        <strong>{c.displayName}</strong>
                         <span className={`lb-kom-badge lb-kom-badge--${tier.cls}`}>
                           {tier.label}
                         </span>
@@ -145,7 +176,11 @@ export default async function KomunitasPage() {
 
           <ul className="lb-kom-feed">
             {recentReports.map((r) => {
-              const tier = reporterTierMap.get(r.reporterName)
+              const userId = r.reportedBy?.id || `anon-${r.reporterName}`
+              const tier = contributorTierMap.get(userId)
+              const displayName = r.reportedBy?.fullName || r.reporterName
+              const initials = displayName.slice(0, 1).toUpperCase()
+              const avatarUrl = r.reportedBy?.avatarUrl || null
               return (
                 <li key={r.id}>
                   <Link className="lb-kom-feed__row" href={`/laporan/${r.slug}`}>
@@ -157,9 +192,19 @@ export default async function KomunitasPage() {
                       <strong>{r.title}</strong>
                       <div className="lb-kom-feed__by">
                         <span className="lb-kom-feed__avatar">
-                          {r.reporterName.slice(0, 1).toUpperCase()}
+                          {avatarUrl ? (
+                            <Image
+                              alt={displayName}
+                              fill
+                              sizes="24px"
+                              src={avatarUrl}
+                              style={{ borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            initials
+                          )}
                         </span>
-                        <span className="lb-kom-feed__reporter">{r.reporterName}</span>
+                        <span className="lb-kom-feed__reporter">{displayName}</span>
                         {tier && (
                           <span className={`lb-kom-badge lb-kom-badge--${tier.cls}`}>
                             {tier.label}

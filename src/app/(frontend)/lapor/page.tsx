@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-
+import { FaLock } from "react-icons/fa";
 import { AppShell } from '@/components/lautbersih/AppShell'
 import { ReportFormExperience } from '@/components/lautbersih/ReportFormExperience'
 import { getCurrentUser } from '@/lib/auth'
@@ -33,7 +33,7 @@ export default async function ReportFormPage() {
           <h1>Form pelaporan maritim terpadu</h1>
         </section>
         <div className="lb-lapor-gate">
-          <div className="lb-lapor-gate__icon">🔒</div>
+          <div className="lb-lapor-gate__icon"><FaLock /></div>
           <h2>Profil Belum Lengkap</h2>
           <p>
             Untuk dapat membuat laporan, Anda perlu melengkapi informasi akun terlebih dahulu.

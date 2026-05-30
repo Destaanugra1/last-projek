@@ -201,6 +201,8 @@
     height: 36px;
     justify-content: center;
     letter-spacing: 0;
+    overflow: hidden;
+    position: relative;
     width: 36px;
   }
 
@@ -355,6 +357,8 @@
   font-weight: 800;
   height: 18px;
   justify-content: center;
+  overflow: hidden;
+  position: relative;
   width: 18px;
 }
 

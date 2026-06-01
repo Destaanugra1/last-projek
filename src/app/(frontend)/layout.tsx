@@ -8,12 +8,14 @@ import { Navbar } from '@/components/lautbersih/Navbar'
 import { OceanCleanupPreloader } from '@/components/lautbersih/OceanCleanupPreloader'
 
 const dmSans = DM_Sans({
+  preload: false,
   subsets: ['latin'],
   weight: ['400', '600'],
   variable: '--font-dm-sans',
 })
 
 const playfair = Playfair_Display({
+  preload: false,
   subsets: ['latin'],
   weight: ['400', '700'],
   style: ['normal', 'italic'],
@@ -21,6 +23,7 @@ const playfair = Playfair_Display({
 })
 
 const inter = Inter({
+  preload: false,
   subsets: ['latin'],
   weight: ['500'],
   variable: '--font-inter',

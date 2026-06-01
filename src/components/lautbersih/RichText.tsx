@@ -99,7 +99,7 @@ const renderNodes = (nodes: LexicalNode[] | undefined): React.ReactNode[] => {
         )
 
       case 'heading': {
-        const Tag = (node.tag || 'h2') as keyof React.JSX.IntrinsicElements
+        const Tag = (node.tag || 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
         const headingStyles = {
           h1: 'text-3xl md:text-4xl font-serif text-[#0b2540] font-semibold mt-8 mb-4 tracking-tight border-b border-slate-100 pb-2',
           h2: 'text-2xl md:text-3xl font-serif text-[#0b2540] font-medium mt-6 mb-3 tracking-tight',

@@ -35,23 +35,22 @@ export function OceanCleanupPreloader() {
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const loadingText = root.querySelector('.loading-text')
+      const welcomeTimer = window.setTimeout(() => {
+        if (loadingText) {
+          loadingText.textContent = 'Welcome!'
+        }
+      }, 450)
 
-      if (loadingText) {
-        loadingText.textContent = 'Welcome!'
-      }
-
-      gsap.set(mainContent, { opacity: 1, y: 0 })
-      const reducedMotionTween = gsap.to(root, {
-        autoAlpha: 0,
-        duration: 0.35,
-        delay: 0.25,
-        onComplete: () => {
-          root.style.display = 'none'
-        },
-      })
+      gsap.set(mainContent, { opacity: 1, y: 0, clearProps: 'transform' })
+      const hideTimer = window.setTimeout(() => {
+        root.style.opacity = '0'
+        root.style.pointerEvents = 'none'
+        root.style.display = 'none'
+      }, 900)
 
       return () => {
-        reducedMotionTween.kill()
+        window.clearTimeout(welcomeTimer)
+        window.clearTimeout(hideTimer)
       }
     }
 

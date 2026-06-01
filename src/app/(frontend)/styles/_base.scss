@@ -6,6 +6,9 @@ html {
     linear-gradient(180deg, #f9fbfe 0%, #eef3fa 100%);
   color: var(--lb-text);
   font-size: 16px;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -13,7 +16,11 @@ body {
   color: var(--lb-text);
   font-family: var(--font-dm-sans), 'Segoe UI', sans-serif;
   margin: 0;
+  max-width: 100%;
   overflow-x: hidden;
+  overscroll-behavior-x: none;
+  position: relative;
+  width: 100%;
 }
 
 main {

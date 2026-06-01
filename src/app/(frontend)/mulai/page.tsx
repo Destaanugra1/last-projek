@@ -2,6 +2,10 @@ import Link from 'next/link'
 
 import { getSiteSettings } from '@/lib/reports'
 
+export const metadata = {
+  title: 'Mulai',
+}
+
 export default async function OnboardingPage() {
   const settings = await getSiteSettings()
 

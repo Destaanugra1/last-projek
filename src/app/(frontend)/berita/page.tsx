@@ -2,6 +2,10 @@ import Link from 'next/link'
 
 import { getBlogPosts } from '@/lib/blog'
 
+export const metadata = {
+  title: 'Berita',
+}
+
 export const dynamic = 'force-dynamic'
 
 const severityLabel: Record<string, string> = {

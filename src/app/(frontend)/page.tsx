@@ -113,7 +113,6 @@ export default async function HomePage() {
 
   return (
     <div className="lb-home">
-
       <HomeHero
         badge={settings.heroBadge}
         banners={settings.heroBanners}
@@ -123,7 +122,6 @@ export default async function HomePage() {
         title={settings.heroTitle}
       />
 
-      
       {partners.length > 0 && (
         <section className="lb-home__partners">
           <div className="lb-home__partners-head">
@@ -146,8 +144,8 @@ export default async function HomePage() {
                 .filter((item) => item.src)}
               speed={60}
               direction="left"
-              logoHeight={80}
-              gap={96}
+              logoHeight={96}
+              gap={80}
               hoverSpeed={0}
               fadeOut
               fadeOutColor="#0b2540"
@@ -165,7 +163,6 @@ export default async function HomePage() {
           userId={user.id}
         />
       )}
-
 
       <section className="lb-home__stats-wrap">
         <div className="lb-home__stats-grid">
@@ -207,8 +204,6 @@ export default async function HomePage() {
 
         <LautBersihGlobe reports={reports} />
       </section>
-
-
 
       {(userRole === 'admin' || userRole === 'reporter') && (
         <Link className="lb-home__fab" href="/lapor">

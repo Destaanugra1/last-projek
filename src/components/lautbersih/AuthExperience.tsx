@@ -124,14 +124,14 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
                 </div>
               </div>
 
-              <div className="lb-auth-mobile-copy">© 2024 LautBersih Maritime Authority</div>
+              <div className="lb-auth-mobile-copy">© 2026 LautBersih Maritime Authority</div>
             </section>
           </div>
         </main>
 
         <footer className="lb-auth-footer">
           <div className="lb-auth-footer__inner">
-            <p>© 2024 LautBersih Maritime Authority. All rights reserved.</p>
+            <p>© 2026 LautBersih Maritime Authority. All rights reserved.</p>
             <div>
               <Link href="/">Beranda</Link>
               <Link href="/register">Daftar Akun</Link>

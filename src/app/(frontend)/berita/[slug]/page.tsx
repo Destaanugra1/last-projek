@@ -1,9 +1,21 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { getBlogPostBySlug } from '@/lib/blog'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getBlogPostBySlug(slug)
+  if (!post) return { title: 'Berita Tidak Ditemukan' }
+  return { title: post.title }
+}
 
 const severityLabel: Record<string, string> = {
   critical: 'Kritis',

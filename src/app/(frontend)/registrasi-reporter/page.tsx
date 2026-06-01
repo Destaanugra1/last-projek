@@ -4,6 +4,10 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import Link from 'next/link'
 
+export const metadata = {
+  title: 'Registrasi Reporter',
+}
+
 export default async function RegistrasiReporterPage() {
   const payload = await getPayloadClient()
 

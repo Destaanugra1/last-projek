@@ -23,6 +23,10 @@ import { ProfileEditModal } from '@/components/lautbersih/ProfileEditModal'
 import { getCurrentUser } from '@/lib/auth'
 import { buildDashboardStats, getReports } from '@/lib/reports'
 
+export const metadata = {
+  title: 'Profil',
+}
+
 export const dynamic = 'force-dynamic'
 
 type ProfileUser = {

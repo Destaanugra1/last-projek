@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { AppShell } from '@/components/lautbersih/AppShell'
@@ -9,6 +10,17 @@ import { getReportBySlug } from '@/lib/reports'
 import { ReportMapView } from './ReportMapView'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const report = await getReportBySlug(slug)
+  if (!report) return { title: 'Laporan Tidak Ditemukan' }
+  return { title: report.title }
+}
 
 const severityMeta: Record<string, { label: string; tone: string }> = {
   critical: { label: 'KRITIS (LEVEL 4)', tone: 'critical' },

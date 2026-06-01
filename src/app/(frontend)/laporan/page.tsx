@@ -5,6 +5,10 @@ import { getCurrentUser } from '@/lib/auth'
 import { SeverityBadge, StatusBadge } from '@/components/lautbersih/Badges'
 import { getReports } from '@/lib/reports'
 
+export const metadata = {
+  title: 'Daftar Laporan',
+}
+
 export const dynamic = 'force-dynamic'
 
 export default async function ReportsListPage() {

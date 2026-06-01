@@ -8,6 +8,10 @@ import { getWasteCategories } from '@/lib/reports'
 
 import { submitReport } from './actions'
 
+export const metadata = {
+  title: 'Buat Laporan',
+}
+
 export const dynamic = 'force-dynamic'
 
 type LaporUser = { phone?: string | null; organization?: string | null; role?: string }

@@ -3,6 +3,10 @@ import { StatusBadge } from '@/components/lautbersih/Badges'
 import { statusMeta } from '@/lib/lautbersih'
 import { getReports } from '@/lib/reports'
 
+export const metadata = {
+  title: 'Notifikasi',
+}
+
 export const dynamic = 'force-dynamic'
 
 const notificationCopy = {

@@ -27,7 +27,10 @@ const inter = Inter({
 
 export const metadata = {
   description: 'Platform pelaporan sampah pesisir berbasis komunitas dengan Payload CMS.',
-  title: 'LautBersih',
+  title: {
+    default: 'LautBersih',
+    template: '%s | LautBersih',
+  },
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {

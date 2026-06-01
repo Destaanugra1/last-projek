@@ -13,6 +13,10 @@ import {
 import { buildDashboardStats, getReports } from '@/lib/reports'
 import { getCurrentUser } from '@/lib/auth'
 
+export const metadata = {
+  title: 'Dashboard',
+}
+
 export const dynamic = 'force-dynamic'
 
 const severityColor: Record<string, string> = {

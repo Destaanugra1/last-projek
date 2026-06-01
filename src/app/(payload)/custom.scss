@@ -25,3 +25,188 @@
     max-height: calc(85vh - 32px) !important;
   }
 }
+
+/* ─── Admin Login Customization ──────────────────────────────────── */
+
+html,
+body {
+  background: linear-gradient(135deg, #f0fdf8 0%, #e8f4f0 40%, #f8fbfe 100%) !important;
+}
+
+.lb-admin-login-hero {
+  text-align: center;
+  margin-bottom: 32px;
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  &__logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  &__text {
+    text-align: left;
+
+    h1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #0b2540;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    p {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #1d9e75;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 2px 0 0;
+    }
+  }
+
+  &__desc {
+    font-size: 0.88rem;
+    color: #5a6d7e;
+    line-height: 1.55;
+    margin: 0 auto;
+    max-width: 340px;
+  }
+}
+
+/* Override Payload's default login card */
+.login {
+  border-radius: 20px !important;
+  box-shadow:
+    0 4px 24px rgba(11, 37, 64, 0.06),
+    0 1px 3px rgba(11, 37, 64, 0.04) !important;
+  border: 1px solid rgba(29, 158, 117, 0.12) !important;
+  padding: 40px 36px !important;
+  max-width: 420px !important;
+  margin: 80px auto !important;
+
+  &:hover {
+    box-shadow:
+      0 8px 32px rgba(11, 37, 64, 0.08),
+      0 2px 6px rgba(11, 37, 64, 0.04) !important;
+  }
+}
+
+/* Style the Payload logo out of the login card */
+.login__brand {
+  display: none !important;
+}
+
+/* Form field styling */
+.field-type--email,
+.field-type--text,
+.field-type--password {
+  border-radius: 10px !important;
+}
+
+/* Submit button */
+.btn--style-primary {
+  background: linear-gradient(135deg, #1d9e75 0%, #0b8a60 100%) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  padding: 14px 24px !important;
+  transition: all 200ms ease !important;
+
+  &:hover {
+    background: linear-gradient(135deg, #17896a 0%, #0a7a55 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(29, 158, 117, 0.3) !important;
+  }
+}
+
+/* ─── Admin Nav Sidebar ──────────────────────────────────────────── */
+
+.nav {
+  background: var(--theme-bg) !important;
+}
+
+.nav-group__toggle {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 12px 0 6px !important;
+  color: var(--theme-elevation-400) !important;
+}
+
+/* Nav link icon injection via data attributes */
+.nav__link {
+  font-size: 14px !important;
+  line-height: 28px !important;
+  padding: 4px 12px 4px 0 !important;
+  border-radius: 6px !important;
+  transition: background 150ms ease, color 150ms ease !important;
+  position: relative !important;
+  gap: 8px !important;
+}
+
+.nav__link:hover {
+  background: var(--theme-elevation-50) !important;
+  text-decoration: none !important;
+}
+
+.nav__link.active {
+  background: var(--theme-elevation-100) !important;
+  font-weight: 600 !important;
+  color: var(--theme-text) !important;
+}
+
+/* Icon styling for nav links */
+.nav__link-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-elevation-400);
+}
+
+.nav__link.active .nav__link-icon {
+  color: var(--theme-text);
+}
+
+/* Nav group header styling */
+.nav-group__toggle svg {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: 0 !important;
+}
+
+/* Collapsible nav group */
+.nav-group--collapsed .collapsible__toggle {
+  border-radius: 6px !important;
+}
+
+/* Scroll area */
+.nav__scroll {
+  scrollbar-width: none !important;
+}
+
+.nav__scroll::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Forgot password link */
+.forgot-password {
+  color: #1d9e75 !important;
+  font-size: 0.82rem !important;
+
+  &:hover {
+    color: #0b8a60 !important;
+  }
+}

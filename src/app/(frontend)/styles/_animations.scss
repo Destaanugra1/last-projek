@@ -114,3 +114,8 @@
       0 0 0 0 rgba(226, 75, 74, 0);
   }
 }
+
+@keyframes lb-preloader-wave {
+  0%, 100% { transform: translate3d(-2%, 0, 0) scaleX(1.02); }
+  50%      { transform: translate3d(2%, -10px, 0) scaleX(1); }
+}

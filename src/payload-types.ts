@@ -178,6 +178,7 @@ export interface Media {
    */
   cloudinaryUrl?: string | null;
   cloudinaryPublicId?: string | null;
+  cloudinaryResourceType?: ('image' | 'raw') | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -337,7 +338,7 @@ export interface ReporterApplication {
    */
   foto_profil?: (number | null) | Media;
   /**
-   * Bukti CV/resume dalam format gambar JPG atau PNG.
+   * Unggah dokumen CV/resume dalam format PDF dengan ukuran maksimal 3 MB.
    */
   foto_cv: number | Media;
   /**
@@ -483,6 +484,7 @@ export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   cloudinaryUrl?: T;
   cloudinaryPublicId?: T;
+  cloudinaryResourceType?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

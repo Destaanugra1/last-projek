@@ -34,21 +34,36 @@ export const Media: CollectionConfig = {
         hidden: true,
       },
     },
+    {
+      name: 'cloudinaryResourceType',
+      type: 'select',
+      options: [
+        { label: 'Image', value: 'image' },
+        { label: 'Raw', value: 'raw' },
+      ],
+      admin: {
+        hidden: true,
+        readOnly: true,
+      },
+    },
   ],
   hooks: {
     beforeChange: [
-      async ({ data, req, operation }) => {
+      async ({ data, req, operation: _operation }) => {
         // Only handle uploads when there's a new file
         const file = req.file
         if (!file || !file.data) return data
 
         try {
           const buffer = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data)
+          const resourceType = file.mimetype === 'application/pdf' ? 'raw' : 'image'
           const result = await uploadToCloudinary(buffer, {
             folder: 'lautbersih/media',
+            resourceType,
           })
           return {
             ...data,
+            cloudinaryResourceType: result.resourceType,
             cloudinaryUrl: result.url,
             cloudinaryPublicId: result.publicId,
           }
@@ -61,9 +76,11 @@ export const Media: CollectionConfig = {
     afterDelete: [
       async ({ doc, req }) => {
         const publicId = (doc as { cloudinaryPublicId?: string }).cloudinaryPublicId
+        const resourceType =
+          (doc as { cloudinaryResourceType?: 'image' | 'raw' }).cloudinaryResourceType || 'image'
         if (!publicId) return
         try {
-          await deleteFromCloudinary(publicId)
+          await deleteFromCloudinary(publicId, resourceType)
         } catch (error) {
           req.payload.logger.error(`Cloudinary delete failed: ${(error as Error).message}`)
         }
@@ -72,7 +89,10 @@ export const Media: CollectionConfig = {
   },
   upload: {
     disableLocalStorage: true,
+    mimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
     adminThumbnail: ({ doc }) =>
-      String((doc as { cloudinaryUrl?: string }).cloudinaryUrl ?? ''),
+      (doc as { mimeType?: string; cloudinaryUrl?: string }).mimeType === 'application/pdf'
+        ? ''
+        : String((doc as { cloudinaryUrl?: string }).cloudinaryUrl ?? ''),
   },
 }

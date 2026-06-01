@@ -27,6 +27,15 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    meta: {
+      icons: [
+        {
+          rel: 'icon',
+          type: 'image/jpeg',
+          url: '/icon.jpg',
+        },
+      ],
+    },
   },
   collections: [Users, Media, WasteCategories, Reports, BlogPosts, Partners, ReporterApplications],
   editor: lexicalEditor(),

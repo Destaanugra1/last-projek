@@ -33,6 +33,12 @@ export const submitReport = async (formData: FormData) => {
     throw new Error('Foto tidak relevan dengan lingkungan laut atau pantai.')
   }
 
+  if (String(formData.get('photoAnalysisCompleted') || '') !== 'true') {
+    throw new Error(
+      'Generate foto terlebih dahulu. Laporan hanya bisa dikirim setelah analisis foto selesai.',
+    )
+  }
+
   // AI vision analysis result (from frontend Generate Deskripsi)
   const aiSeverityTone = String(formData.get('aiSeverityTone') || '').trim()
   const aiSeverityLabel = String(formData.get('aiSeverityLabel') || '').trim()
@@ -75,6 +81,10 @@ export const submitReport = async (formData: FormData) => {
     .getAll('photos')
     .filter((entry): entry is File => entry instanceof File && entry.size > 0)
 
+  if (files.length === 0) {
+    throw new Error('Foto bukti wajib diunggah sebelum laporan dikirim.')
+  }
+
   for (const [index, file] of files.entries()) {
     const buffer = Buffer.from(await file.arrayBuffer())
 
@@ -105,10 +115,7 @@ export const submitReport = async (formData: FormData) => {
     ? {
         recommendations: (aiRecommendationsList.length > 0
           ? aiRecommendationsList
-          : [
-              'Verifikasi cepat oleh admin lapangan.',
-              'Pantau perkembangan kondisi secara berkala.',
-            ]
+          : ['Verifikasi cepat oleh admin lapangan.', 'Pantau perkembangan kondisi secara berkala.']
         ).map((item) => ({ item })),
         summary:
           aiSummary ||

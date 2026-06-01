@@ -8,19 +8,20 @@ cloudinary.config({
 
 export type CloudinaryUploadResult = {
   publicId: string
+  resourceType: 'image' | 'raw'
   url: string
 }
 
 export const uploadToCloudinary = (
   buffer: Buffer,
-  options: { folder?: string; publicId?: string } = {},
+  options: { folder?: string; publicId?: string; resourceType?: 'image' | 'raw' } = {},
 ): Promise<CloudinaryUploadResult> => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: options.folder ?? 'lautbersih/media',
         public_id: options.publicId,
-        resource_type: 'image',
+        resource_type: options.resourceType ?? 'image',
         overwrite: true,
       },
       (error, result) => {
@@ -28,13 +29,21 @@ export const uploadToCloudinary = (
           reject(error ?? new Error('Cloudinary upload failed'))
           return
         }
-        resolve({ publicId: result.public_id, url: result.secure_url })
+        resolve({
+          publicId: result.public_id,
+          resourceType:
+            (result.resource_type as 'image' | 'raw') ?? options.resourceType ?? 'image',
+          url: result.secure_url,
+        })
       },
     )
     stream.end(buffer)
   })
 }
 
-export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
-  await cloudinary.uploader.destroy(publicId)
+export const deleteFromCloudinary = async (
+  publicId: string,
+  resourceType: 'image' | 'raw' = 'image',
+): Promise<void> => {
+  await cloudinary.uploader.destroy(publicId, { resource_type: resourceType })
 }

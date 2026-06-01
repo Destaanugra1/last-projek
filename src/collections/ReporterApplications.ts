@@ -88,10 +88,10 @@ export const ReporterApplications: CollectionConfig = {
       name: 'foto_cv',
       type: 'upload',
       relationTo: 'media',
-      label: 'Foto CV / Resume',
+      label: 'Dokumen CV / Resume (PDF)',
       required: true,
       admin: {
-        description: 'Bukti CV/resume dalam format gambar JPG atau PNG.',
+        description: 'Unggah dokumen CV/resume dalam format PDF dengan ukuran maksimal 3 MB.',
       },
     },
     {

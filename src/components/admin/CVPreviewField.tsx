@@ -1,13 +1,16 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useFormFields } from '@payloadcms/ui'
 
 type MediaDoc = {
   id: string | number
   cloudinaryUrl?: string | null
-  url?: string | null
+  cloudinaryPublicId?: string | null
+  cloudinaryResourceType?: 'image' | 'raw' | null
   filename?: string | null
+  mimeType?: string | null
+  url?: string | null
   alt?: string | null
 }
 
@@ -18,6 +21,7 @@ const resolveUrl = (photo: PhotoValue): string | null => {
   if (typeof photo === 'string' || typeof photo === 'number') return null
   if (photo.cloudinaryUrl) return photo.cloudinaryUrl
   if (photo.url) return photo.url
+  if (photo.mimeType === 'application/pdf') return null
   if (photo.filename) return `/api/media/file/${photo.filename}`
   return null
 }
@@ -30,18 +34,77 @@ const resolveMediaDoc = (value: unknown, initialValue: unknown): PhotoValue | nu
   return null
 }
 
+const resolveMediaId = (value: PhotoValue | null): string | number | null => {
+  if (!value) return null
+  if (typeof value === 'string' || typeof value === 'number') return value
+  return value.id
+}
+
 export function CVPreviewField() {
   const fotoCv = useFormFields(([fields]) => fields['foto_cv'])
   const namaLengkap = useFormFields(([fields]) => fields['nama_lengkap'])
+  const [resolvedDoc, setResolvedDoc] = useState<MediaDoc | null>(null)
 
-  const val = resolveMediaDoc(fotoCv?.value, fotoCv?.initialValue)
+  const val = useMemo(
+    () => resolveMediaDoc(fotoCv?.value, fotoCv?.initialValue),
+    [fotoCv?.initialValue, fotoCv?.value],
+  )
+
+  useEffect(() => {
+    if (!val) return
+
+    let ignore = false
+
+    const maybeFetchMedia = async () => {
+      const current = typeof val === 'object' ? val : null
+
+      if (current && (current.cloudinaryUrl || current.url)) {
+        setResolvedDoc(current)
+        return
+      }
+
+      const id = typeof val === 'object' ? val.id : val
+
+      if (!id) {
+        setResolvedDoc(current)
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/media/${id}`)
+        if (!response.ok) throw new Error('Failed to fetch media')
+        const doc = (await response.json()) as MediaDoc
+        if (!ignore) {
+          setResolvedDoc(doc)
+        }
+      } catch {
+        if (!ignore) {
+          setResolvedDoc(current)
+        }
+      }
+    }
+
+    void maybeFetchMedia()
+
+    return () => {
+      ignore = true
+    }
+  }, [val])
+
   if (!val) return null
 
-  const url = resolveUrl(val)
+  const activeDoc = typeof val === 'object' ? { ...val, ...resolvedDoc } : resolvedDoc
+
+  const url = activeDoc ? resolveUrl(activeDoc) : null
   if (!url) return null
 
-  const alt = typeof val === 'object' ? (val.alt ?? 'Foto CV') : 'Foto CV'
+  const alt = activeDoc?.alt ?? 'Dokumen CV'
   const name = String(namaLengkap?.value ?? '')
+  const fileName = activeDoc?.filename || 'cv-reporter.pdf'
+  const mimeType = activeDoc?.mimeType || 'application/pdf'
+  const mediaId = resolveMediaId(val)
+  const previewUrl =
+    mimeType === 'application/pdf' && mediaId ? `/api/media-preview/${mediaId}#view=FitH` : url
 
   return (
     <div
@@ -64,13 +127,10 @@ export function CVPreviewField() {
           margin: 0,
         }}
       >
-        Pratinjau Dokumen CV / Resume ({name || 'Pendaftar'})
+        Dokumen CV / Resume ({name || 'Pendaftar'})
       </p>
-      <a
+      <div
         className="reporter-cv-preview__link"
-        href={url}
-        rel="noreferrer"
-        target="_blank"
         style={{
           alignSelf: 'stretch',
           background: 'linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%)',
@@ -80,30 +140,95 @@ export function CVPreviewField() {
           border: '1px solid rgba(11, 37, 64, 0.1)',
           boxShadow: '0 18px 40px rgba(11, 37, 64, 0.08)',
           width: '100%',
-          minHeight: '420px',
-          maxHeight: '80vh',
-          padding: '16px',
+          minHeight: '620px',
+          padding: '20px',
         }}
       >
-        <img
-          className="reporter-cv-preview__image"
-          alt={alt}
-          src={url}
+        <div
           style={{
-            borderRadius: '12px',
-            display: 'block',
-            objectFit: 'contain',
-            width: '100%',
-            minHeight: '388px',
-            maxHeight: 'calc(80vh - 32px)',
-            background: '#fff',
+            alignItems: 'center',
+            display: 'flex',
+            gap: '12px',
+            justifyContent: 'space-between',
+            marginBottom: '16px',
           }}
-        />
-      </a>
+        >
+          <div style={{ minWidth: 0 }}>
+            <strong
+              style={{
+                color: 'var(--theme-text)',
+                display: 'block',
+                fontSize: '15px',
+                marginBottom: '4px',
+              }}
+            >
+              {alt}
+            </strong>
+            <span
+              style={{
+                color: 'var(--theme-text-dim)',
+                display: 'block',
+                fontSize: '13px',
+              }}
+            >
+              {fileName}
+            </span>
+            <span
+              style={{
+                color: 'var(--theme-text-dim)',
+                display: 'block',
+                fontSize: '12px',
+                marginTop: '2px',
+              }}
+            >
+              {mimeType}
+            </span>
+          </div>
+          <a
+            href={url}
+            rel="noreferrer"
+            target="_blank"
+            style={{
+              background: '#0b2540',
+              borderRadius: '999px',
+              color: '#fff',
+              display: 'inline-flex',
+              flexShrink: 0,
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '8px 14px',
+              textDecoration: 'none',
+            }}
+          >
+            Buka Dokumen
+          </a>
+        </div>
+
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: '12px',
+            border: '1px solid rgba(11, 37, 64, 0.08)',
+            overflow: 'hidden',
+            width: '100%',
+          }}
+        >
+          <iframe
+            src={previewUrl}
+            title={alt}
+            style={{
+              border: 'none',
+              display: 'block',
+              height: '520px',
+              width: '100%',
+            }}
+          />
+        </div>
+      </div>
       <p
         style={{ color: 'var(--theme-text-dim)', fontSize: '12px', margin: 0, fontStyle: 'italic' }}
       >
-        Klik gambar untuk membuka ukuran penuh di tab baru.
+        Jika pratinjau tidak muncul, gunakan tombol Buka Dokumen untuk membuka PDF di tab baru.
       </p>
     </div>
   )

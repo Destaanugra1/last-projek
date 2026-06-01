@@ -24,69 +24,15 @@ const fallbackCategories: FormCategory[] = [
   { id: '', title: 'Lainnya' },
 ]
 
-const analysisProfiles = {
-  default: {
-    confidence: '85.1%',
-    items: [
-      'Lakukan observasi berkelanjutan',
-      'Dokumentasikan perubahan visual',
-      'Siapkan tim investigasi darat',
-    ],
-    severity: 'WASPADA (LEVEL 1)',
-    severityTone: 'safe',
-  },
-  ecosystem: {
-    confidence: '85.1%',
-    items: [
-      'Lakukan observasi berkelanjutan',
-      'Dokumentasikan perubahan visual',
-      'Siapkan tim investigasi darat',
-    ],
-    severity: 'WASPADA (LEVEL 1)',
-    severityTone: 'safe',
-  },
-  oil: {
-    confidence: '97.2%',
-    items: [
-      'Kirim armada penahan (oil boom) segera',
-      'Evakuasi satwa di radius 2km',
-      'Aktifkan protokol pembersihan pesisir',
-    ],
-    severity: 'KRITIS (LEVEL 4)',
-    severityTone: 'critical',
-  },
-  waste: {
-    confidence: '92.5%',
-    items: [
-      'Jadwalkan kapal pengumpul sampah',
-      'Monitor arah arus laut lokal',
-      'Lapor ke dinas kebersihan terdekat',
-    ],
-    severity: 'MODERAT (LEVEL 2)',
-    severityTone: 'moderate',
-  },
-} as const
-
-const pickAnalysisKey = (label: string) => {
-  const normalized = label.toLowerCase()
-
-  if (normalized.includes('oil')) {
-    return 'oil'
-  }
-
-  if (
-    normalized.includes('waste') ||
-    normalized.includes('debris') ||
-    normalized.includes('sampah')
-  ) {
-    return 'waste'
-  }
-
-  if (normalized.includes('ecosystem') || normalized.includes('karang')) {
-    return 'ecosystem'
-  }
-
-  return 'default'
+const initialAnalysisState = {
+  categoryLabel: '-',
+  confidence: '0%',
+  error: null,
+  items: [],
+  phase: 'idle' as const,
+  severity: 'MENGANALISIS...',
+  severityTone: 'safe' as const,
+  summary: null,
 }
 
 const compressImageToBase64 = (file: File, maxDim: number, quality: number): Promise<string> =>
@@ -192,7 +138,7 @@ export const ReportFormExperience = ({
     } catch {
       // ignore malformed storage
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Save draft to sessionStorage whenever form values change
   useEffect(() => {
@@ -215,21 +161,13 @@ export const ReportFormExperience = ({
     severity: string
     severityTone: 'critical' | 'moderate' | 'safe'
     summary: string | null
-  }>({
-    categoryLabel: '-',
-    confidence: '0%',
-    error: null,
-    items: [],
-    phase: 'idle',
-    severity: 'MENGANALISIS...',
-    severityTone: 'safe',
-    summary: null,
-  })
+  }>(initialAnalysisState)
 
   useEffect(() => {
+    const currentTimer = timerRef.current
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
+      if (currentTimer) {
+        clearTimeout(currentTimer)
       }
     }
   }, [])
@@ -292,6 +230,8 @@ export const ReportFormExperience = ({
     setPhotos(files)
     setIsOutOfContext(false)
     setGenDescError(null)
+    setAnalysisState(initialAnalysisState)
+    setSubmitError(null)
   }
 
   const onGenerateDescription = () => {
@@ -415,6 +355,18 @@ export const ReportFormExperience = ({
     ? `Koordinat ${coordinates}`
     : title || 'Titik Laporan LautBersih'
   const confidenceWidth = analysisState.phase === 'ready' ? analysisState.confidence : '0%'
+  const hasPhotos = photos.length > 0
+  const requiresPhotoAnalysis = hasPhotos
+  const isPhotoAnalysisReady = analysisState.phase === 'ready'
+  const isSubmitBlockedByAnalysis = requiresPhotoAnalysis && !isPhotoAnalysisReady
+  const submitDisabled = isOutOfContext || isSubmitBlockedByAnalysis || isGenPending || isAiPending
+  const submitHint = isOutOfContext
+    ? 'Foto yang diunggah tidak relevan dengan laut, pantai, atau pesisir.'
+    : !hasPhotos
+      ? 'Unggah foto bukti terlebih dahulu.'
+      : analysisState.phase === 'loading'
+        ? 'Tunggu proses generate foto selesai sebelum mengirim laporan.'
+        : 'Generate foto terlebih dahulu agar laporan bisa dikirim.'
 
   return (
     <div className="lb-reporting-page">
@@ -429,6 +381,18 @@ export const ReportFormExperience = ({
                 if (isOutOfContext) {
                   setSubmitError(
                     'Foto tidak relevan dengan lingkungan laut atau pantai. Harap unggah foto yang sesuai.',
+                  )
+                  return
+                }
+
+                if (photos.length === 0) {
+                  setSubmitError('Foto bukti wajib diunggah sebelum laporan dikirim.')
+                  return
+                }
+
+                if (analysisState.phase !== 'ready') {
+                  setSubmitError(
+                    'Generate foto terlebih dahulu. Laporan hanya bisa dikirim setelah analisis foto selesai.',
                   )
                   return
                 }
@@ -493,6 +457,11 @@ export const ReportFormExperience = ({
                 value={analysisState.phase === 'ready' ? JSON.stringify(analysisState.items) : ''}
               />
               <input name="isOutOfContext" type="hidden" value={isOutOfContext ? 'true' : ''} />
+              <input
+                name="photoAnalysisCompleted"
+                type="hidden"
+                value={analysisState.phase === 'ready' ? 'true' : ''}
+              />
 
               <div className="lb-reporting-field">
                 <label htmlFor="report-title">Judul Laporan</label>
@@ -616,7 +585,13 @@ export const ReportFormExperience = ({
                 </div>
               )}
 
-              <ReportSubmitButton disabled={isOutOfContext} />
+              {submitDisabled && (
+                <p className="lb-reporting-submit-hint" role="status">
+                  {submitHint}
+                </p>
+              )}
+
+              <ReportSubmitButton disabled={submitDisabled} />
             </form>
           </section>
 
@@ -786,6 +761,13 @@ export const ReportFormExperience = ({
           border-top-color: #fff;
           border-radius: 999px;
           animation: lb-reporting-submit-spin 0.8s linear infinite;
+        }
+
+        .lb-reporting-submit-hint {
+          margin: 0 0 0.75rem;
+          color: #6b7280;
+          font-size: 0.92rem;
+          line-height: 1.5;
         }
 
         @keyframes lb-reporting-submit-spin {

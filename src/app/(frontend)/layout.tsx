@@ -5,6 +5,7 @@ import './styles/styles.scss'
 
 import { Footer } from '@/components/lautbersih/Footer'
 import { Navbar } from '@/components/lautbersih/Navbar'
+import { OceanCleanupPreloader } from '@/components/lautbersih/OceanCleanupPreloader'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -31,6 +32,10 @@ export const metadata = {
     default: 'LautBersih',
     template: '%s | LautBersih',
   },
+  icons: {
+    icon: '/icon.jpg',
+    shortcut: '/icon.jpg',
+  },
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
@@ -39,9 +44,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="id">
       <body className={`${dmSans.variable} ${playfair.variable} ${inter.variable}`} suppressHydrationWarning>
-        <Navbar />
-        {children}
-        <Footer />
+        <OceanCleanupPreloader />
+        <div className="main-content">
+          <Navbar />
+          {children}
+          <Footer />
+        </div>
       </body>
     </html>
   )

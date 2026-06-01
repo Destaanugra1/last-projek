@@ -1,7 +1,6 @@
 'use server'
 
 import { getPayloadClient } from '@/lib/getPayloadClient'
-import { uploadToCloudinary } from '@/lib/cloudinary'
 
 export async function submitReporterApplication(formData: FormData, userId: string | number) {
   try {
@@ -16,24 +15,26 @@ export async function submitReporterApplication(formData: FormData, userId: stri
       return { error: 'Lengkapi semua data dengan benar sebelum mengirim pengajuan.' }
     }
 
+    if (fotoCvFile.type !== 'application/pdf') {
+      return { error: 'CV wajib diunggah dalam format PDF.' }
+    }
+
+    const maxSize = 3 * 1024 * 1024
+    if (fotoCvFile.size > maxSize) {
+      return { error: 'Ukuran file CV maksimal 3 MB.' }
+    }
+
     const parsedUserId = Number(userId)
     if (Number.isNaN(parsedUserId)) {
       return { error: 'ID Pengguna tidak valid.' }
     }
 
-    // 1. Upload CV file to Cloudinary
     const buffer = Buffer.from(await fotoCvFile.arrayBuffer())
-    const { url: cloudinaryUrl, publicId: cloudinaryPublicId } = await uploadToCloudinary(buffer, {
-      folder: 'lautbersih/cv',
-    })
 
-    // 2. Create Media record in Payload
     const uploadedMedia = await payload.create({
       collection: 'media',
       data: {
-        alt: `Foto CV ${namaLengkap}`,
-        cloudinaryUrl,
-        cloudinaryPublicId,
+        alt: `CV ${namaLengkap}`,
       },
       file: {
         data: buffer,
@@ -44,7 +45,6 @@ export async function submitReporterApplication(formData: FormData, userId: stri
       overrideAccess: true,
     })
 
-    // 3. Create Reporter Application
     await payload.create({
       collection: 'reporter-applications',
       data: {

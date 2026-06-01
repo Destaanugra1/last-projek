@@ -1,10 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Stepper, { Step } from '@/components/lautbersih/Stepper'
 import type { Media } from '@/payload-types'
-import { Image as ImageIcon, X, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, FileText, Upload, X } from 'lucide-react'
 import { submitReporterApplication } from './actions'
 
 export type ReporterRegistrationStep = {
@@ -37,11 +38,34 @@ export default function RegistrasiReporterClient({
   steps,
   userId,
 }: RegistrasiReporterClientProps) {
-  const [formData, setFormData] = useState({
-    nama_lengkap: '',
-    alamat: '',
-    no_hp: '',
-    foto_cv: null as File | null,
+  const LOCAL_STORAGE_KEY = 'reporter_registration_form_data'
+
+  const [formData, setFormData] = useState(() => {
+    const fallback = {
+      nama_lengkap: '',
+      alamat: '',
+      no_hp: '',
+      foto_cv: null as File | null,
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          return {
+            nama_lengkap: parsed.nama_lengkap || '',
+            alamat: parsed.alamat || '',
+            no_hp: parsed.no_hp || '',
+            foto_cv: null,
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load saved form data', e)
+      }
+    }
+
+    return fallback
   })
 
   const [loading, setLoading] = useState(false)
@@ -50,28 +74,6 @@ export default function RegistrasiReporterClient({
     Partial<Record<'alamat' | 'foto_cv' | 'nama_lengkap' | 'no_hp', string>>
   >({})
   const [success, setSuccess] = useState(false)
-
-  const LOCAL_STORAGE_KEY = 'reporter_registration_form_data'
-
-  // Load saved form data on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          setFormData((prev) => ({
-            ...prev,
-            nama_lengkap: parsed.nama_lengkap || '',
-            alamat: parsed.alamat || '',
-            no_hp: parsed.no_hp || '',
-          }))
-        }
-      } catch (e) {
-        console.error('Failed to load saved form data', e)
-      }
-    }
-  }, [])
 
   // Save text fields to localStorage whenever they change
   useEffect(() => {
@@ -99,14 +101,14 @@ export default function RegistrasiReporterClient({
     }
   }
 
-  const isFormDirty = () => {
-    return (
+  const isFormDirty = useCallback(
+    () =>
       formData.nama_lengkap.trim() !== '' ||
       formData.alamat.trim() !== '' ||
       formData.no_hp.trim() !== '' ||
-      formData.foto_cv !== null
-    )
-  }
+      formData.foto_cv !== null,
+    [formData],
+  )
 
   // Confirm before unload / refresh if dirty
   useEffect(() => {
@@ -119,7 +121,7 @@ export default function RegistrasiReporterClient({
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [formData])
+  }, [isFormDirty])
 
   const handleCloseRequest = () => {
     if (isFormDirty()) {
@@ -142,19 +144,18 @@ export default function RegistrasiReporterClient({
   const handleFileChange = (file: File | null) => {
     if (!file) {
       setFormData((prev) => ({ ...prev, foto_cv: null }))
-      setFieldErrors((prev) => ({ ...prev, foto_cv: 'Foto CV wajib diunggah.' }))
+      setFieldErrors((prev) => ({ ...prev, foto_cv: 'Dokumen CV PDF wajib diunggah.' }))
       return
     }
 
-    // Validation
-    const maxSize = 2 * 1024 * 1024
+    const maxSize = 3 * 1024 * 1024
     if (file.size > maxSize) {
-      alert('Ukuran gambar maksimal 2MB.')
+      alert('Ukuran file PDF maksimal 3 MB.')
       return
     }
 
-    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-      alert('Hanya gambar JPG/PNG yang diperbolehkan.')
+    if (file.type !== 'application/pdf') {
+      alert('Hanya file PDF yang diperbolehkan.')
       return
     }
 
@@ -189,7 +190,7 @@ export default function RegistrasiReporterClient({
     }
 
     if (!formData.foto_cv) {
-      nextErrors.foto_cv = 'Foto CV wajib diunggah.'
+      nextErrors.foto_cv = 'Dokumen CV PDF wajib diunggah.'
     }
 
     setFieldErrors(nextErrors)
@@ -294,10 +295,12 @@ export default function RegistrasiReporterClient({
             <Step key={step.id || idx}>
               {imageUrl && (
                 <div className="mb-4 rounded-[16px] overflow-hidden max-h-40 relative aspect-[21/9] w-full bg-[#f3f7fc] border border-[#edf3fb] shadow-sm">
-                  <img
+                  <Image
                     src={imageUrl}
                     alt={step.title}
-                    className="object-cover absolute inset-0 w-full h-full"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    className="object-cover"
                   />
                 </div>
               )}
@@ -395,13 +398,15 @@ export default function RegistrasiReporterClient({
             </div>
 
             <div className="pt-1">
-              <label className="block text-sm font-semibold mb-1.5 text-[#112032]">Foto CV</label>
-              <ImageDropzone
-                accept="image/jpeg, image/png, image/jpg"
-                maxSize="2MB"
+              <label className="block text-sm font-semibold mb-1.5 text-[#112032]">
+                Dokumen CV (PDF)
+              </label>
+              <DocumentDropzone
+                accept="application/pdf"
+                maxSize="3MB"
                 file={formData.foto_cv}
                 onChange={handleFileChange}
-                emptyText="Foto CV / resume"
+                emptyText="CV / resume dalam format PDF"
               />
               {fieldErrors.foto_cv && (
                 <p className="mt-1 text-xs font-medium text-[#b42318]">{fieldErrors.foto_cv}</p>
@@ -440,7 +445,7 @@ export default function RegistrasiReporterClient({
   )
 }
 
-function ImageDropzone({
+function DocumentDropzone({
   accept,
   maxSize,
   file,
@@ -455,14 +460,6 @@ function ImageDropzone({
 }) {
   const [isDragActive, setIsDragActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
-
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -501,13 +498,9 @@ function ImageDropzone({
 
       {file ? (
         <div className="flex flex-col items-center justify-center w-full z-10">
-          {previewUrl && (
-            <img
-              src={previewUrl}
-              alt="Preview gambar yang dipilih"
-              className="mb-2 h-16 w-16 rounded-xl border border-[#edf3fb] object-cover shadow-sm"
-            />
-          )}
+          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d9e4f2] bg-white text-[#0b2540] shadow-sm">
+            <FileText className="h-7 w-7" />
+          </div>
           <p className="text-sm font-medium text-[#112032] truncate max-w-[180px]">{file.name}</p>
           <p className="text-xs text-[#516070] mt-0.5">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
           <button
@@ -518,20 +511,20 @@ function ImageDropzone({
             }}
             className="mt-2 text-xs font-semibold text-[#e24b4a] hover:text-[#991b1b] flex items-center bg-[#fee2e2] hover:bg-[#fca5a5]/30 px-3 py-1.5 rounded-full transition"
           >
-            <X className="w-3 h-3 mr-1" /> Ganti Foto
+            <X className="w-3 h-3 mr-1" /> Ganti Dokumen
           </button>
         </div>
       ) : (
         <div className="flex flex-col items-center pointer-events-none">
           <div className="w-9 h-9 bg-white shadow-sm rounded-full flex items-center justify-center mb-2 text-[#516070]">
-            <ImageIcon className="w-4 h-4" />
+            <Upload className="w-4 h-4" />
           </div>
           <p className="text-sm font-medium text-[#112032] mb-1">
-            <span className="text-[#1d9e75]">Klik</span> pilih gambar
+            <span className="text-[#1d9e75]">Klik</span> pilih dokumen
           </p>
           <p className="text-xs text-[#516070]">{emptyText}</p>
           <p className="text-[10px] text-[#516070] mt-1 uppercase font-medium">
-            JPG/PNG • MAX {maxSize}
+            PDF • MAX {maxSize}
           </p>
         </div>
       )}

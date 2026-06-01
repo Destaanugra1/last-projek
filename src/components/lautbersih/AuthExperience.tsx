@@ -7,6 +7,7 @@ import { loginAction, registerAction } from '@/app/(frontend)/auth/actions'
 
 export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
   const [showPassword, setShowPassword] = useState(false)
+  const [agreeToPrivacy, setAgreeToPrivacy] = useState(false)
   const [loginState, loginFormAction, loginPending] = useActionState(loginAction, { error: null })
   const [registerState, registerFormAction, registerPending] = useActionState(registerAction, {
     error: null,
@@ -258,10 +259,33 @@ export const AuthExperience = ({ mode }: { mode: 'login' | 'register' }) => {
               <small className="text-xs text-slate-500 mt-1">Minimal 8 karakter dengan kombinasi alfanumerik.</small>
             </div>
 
+            <div className="flex items-start gap-3 my-1">
+              <input
+                id="agreeToPrivacy"
+                name="agreeToPrivacy"
+                required
+                type="checkbox"
+                checked={agreeToPrivacy}
+                onChange={(e) => setAgreeToPrivacy(e.target.checked)}
+                className="w-5 h-5 mt-0.5 rounded border-slate-200 text-[#1d9e75] focus:ring-[#1d9e75] cursor-pointer accent-[#1d9e75] flex-shrink-0"
+              />
+              <label htmlFor="agreeToPrivacy" className="text-xs text-slate-600 select-none cursor-pointer leading-normal">
+                Saya menyetujui{' '}
+                <Link
+                  href="/kebijakan-privasi"
+                  target="_blank"
+                  className="font-bold text-blue-900 hover:text-[#1d9e75] transition-colors underline decoration-dotted"
+                >
+                  Kebijakan Privasi
+                </Link>{' '}
+                yang berlaku untuk otorisasi dan pengolahan data pribadi saya.
+              </label>
+            </div>
+
             <div className="mt-2">
               <button
-                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0b2540] to-[#183b63] hover:from-[#183b63] hover:to-[#0b2540] text-white font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
-                disabled={registerPending}
+                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0b2540] to-[#183b63] hover:from-[#183b63] hover:to-[#0b2540] text-white font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed"
+                disabled={!agreeToPrivacy || registerPending}
                 type="submit"
               >
                 {registerPending ? 'Mendaftarkan...' : 'Daftarkan Personel'}

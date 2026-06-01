@@ -49,6 +49,11 @@ export const registerAction = async (_prev: AuthState, formData: FormData): Prom
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const fullName = String(formData.get('fullName') ?? '').trim()
+  const agreeToPrivacy = formData.get('agreeToPrivacy')
+
+  if (!agreeToPrivacy) {
+    return { error: 'Anda wajib menyetujui Kebijakan Privasi untuk mendaftar.' }
+  }
 
   if (!email || !password || !fullName) {
     return { error: 'Nama lengkap, email, dan kata sandi wajib diisi.' }

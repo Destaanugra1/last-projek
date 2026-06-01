@@ -70,16 +70,25 @@
 
 /* ─── Global Navbar ──────────────────────────────────────────────── */
 
+/* Note: NavbarClient uses .lb-global-nav-custom for scroll-driven bg transitions.
+   The .lb-global-nav class is kept only for sub-element selectors. */
 .lb-global-nav {
-  background: linear-gradient(180deg, rgba(11, 37, 64, 0.98), rgba(8, 27, 46, 0.97));
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 24px rgba(11, 37, 64, 0.18);
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: none;
   left: 0;
-  position: sticky;
+  position: fixed;
   right: 0;
   top: 0;
   z-index: 500;
+}
+
+/* Ensure GSAP sticky + translateY works — override browser quirks */
+.lb-global-nav-custom {
+  position: fixed;
+  top: 0;
+  will-change: transform;
 }
 
 .lb-global-nav__inner {

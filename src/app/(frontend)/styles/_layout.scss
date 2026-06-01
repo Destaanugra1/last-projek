@@ -1,15 +1,16 @@
 /* ─── Global Navbar ──────────────────────────────────────────────── */
+/* Background is managed via GSAP in NavbarClient.tsx — do NOT add bg here */
 
 .lb-global-nav {
-  background: linear-gradient(180deg, rgba(11, 37, 64, 0.98), rgba(8, 27, 46, 0.97));
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 24px rgba(11, 37, 64, 0.18);
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: none;
   left: 0;
-  position: sticky;
+  position: fixed;
   right: 0;
   top: 0;
-  z-index: 500;
+  z-index: 1200;
 }
 
 .lb-global-nav__inner {
@@ -301,10 +302,13 @@
 /* ─── Hide global nav/footer on pages with own navigation ─────────── */
 
 body:has(.lb-app-shell) .lb-global-nav,
+body:has(.lb-app-shell) .lb-mobile-nav-wrap,
 body:has(.lb-app-shell) .lb-global-footer,
 body:has(.lb-auth-page) .lb-global-nav,
+body:has(.lb-auth-page) .lb-mobile-nav-wrap,
 body:has(.lb-auth-page) .lb-global-footer,
 body:has(.lb-onboarding-shell) .lb-global-nav,
+body:has(.lb-onboarding-shell) .lb-mobile-nav-wrap,
 body:has(.lb-onboarding-shell) .lb-global-footer {
   display: none;
 }

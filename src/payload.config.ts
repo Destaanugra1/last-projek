@@ -12,8 +12,10 @@ import { Media } from './collections/Media'
 import { Reports } from './collections/Reports'
 import { WasteCategories } from './collections/WasteCategories'
 import { ReporterApplications } from './collections/ReporterApplications'
+import { MaintenancePages } from './collections/MaintenancePages'
 import { SiteSettings } from './globals/SiteSettings'
 import { ReporterRegistration } from './globals/ReporterRegistration'
+import { PrivacyPolicy } from './globals/PrivacyPolicy'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -37,9 +39,9 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Users, Media, WasteCategories, Reports, BlogPosts, Partners, ReporterApplications],
+  collections: [Users, Media, WasteCategories, Reports, BlogPosts, Partners, ReporterApplications, MaintenancePages],
   editor: lexicalEditor(),
-  globals: [SiteSettings, ReporterRegistration],
+  globals: [SiteSettings, ReporterRegistration, PrivacyPolicy],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

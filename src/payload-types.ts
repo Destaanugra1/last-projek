@@ -74,6 +74,7 @@ export interface Config {
     'blog-posts': BlogPost;
     partners: Partner;
     'reporter-applications': ReporterApplication;
+    'maintenance-pages': MaintenancePage;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
     partners: PartnersSelect<false> | PartnersSelect<true>;
     'reporter-applications': ReporterApplicationsSelect<false> | ReporterApplicationsSelect<true>;
+    'maintenance-pages': MaintenancePagesSelect<false> | MaintenancePagesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -100,10 +102,12 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     'reporter-registration': ReporterRegistration;
+    'privacy-policy': PrivacyPolicy;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'reporter-registration': ReporterRegistrationSelect<false> | ReporterRegistrationSelect<true>;
+    'privacy-policy': PrivacyPolicySelect<false> | PrivacyPolicySelect<true>;
   };
   locale: null;
   widgets: {
@@ -353,6 +357,69 @@ export interface ReporterApplication {
   createdAt: string;
 }
 /**
+ * Kelola halaman yang sedang dalam mode pemeliharaan. Tambahkan entri baru untuk setiap halaman yang ingin diblokir sementara.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "maintenance-pages".
+ */
+export interface MaintenancePage {
+  id: number;
+  /**
+   * Pilih rute halaman yang akan diblokir. Memilih "Global" akan memblokir seluruh situs.
+   */
+  pageRoute:
+    | 'global'
+    | '/'
+    | '/petawilayah'
+    | '/lapor'
+    | '/laporan'
+    | '/komunitas'
+    | '/berita'
+    | '/notifikasi'
+    | '/profil'
+    | '/login'
+    | '/register'
+    | '/dashboard'
+    | '/kebijakan-privasi'
+    | '/mulai';
+  /**
+   * Centang untuk mengaktifkan mode pemeliharaan. Biarkan tidak tercentang untuk mematikannya tanpa menghapus konfigurasi ini.
+   */
+  isActive?: boolean | null;
+  /**
+   * Jika aktif, pengguna dengan role Admin dapat mengakses halaman secara normal meskipun sedang dalam mode pemeliharaan.
+   */
+  allowAdmins?: boolean | null;
+  /**
+   * Secara default maintenance hanya aktif di Production. Centang ini untuk mengaktifkan maintenance di lingkungan Development/Testing juga (berguna untuk preview tampilan popup).
+   */
+  applyOnDev?: boolean | null;
+  /**
+   * Judul utama yang ditampilkan di popup overlay pemeliharaan.
+   */
+  title: string;
+  /**
+   * Tulis pesan yang akan ditampilkan kepada pengguna. Bisa mencakup alasan pemeliharaan, estimasi waktu selesai, dsb.
+   */
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -403,6 +470,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'reporter-applications';
         value: number | ReporterApplication;
+      } | null)
+    | ({
+        relationTo: 'maintenance-pages';
+        value: number | MaintenancePage;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -595,6 +666,20 @@ export interface ReporterApplicationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "maintenance-pages_select".
+ */
+export interface MaintenancePagesSelect<T extends boolean = true> {
+  pageRoute?: T;
+  isActive?: T;
+  allowAdmins?: T;
+  applyOnDev?: T;
+  title?: T;
+  content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -704,6 +789,31 @@ export interface ReporterRegistration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "privacy-policy".
+ */
+export interface PrivacyPolicy {
+  id: number;
+  title: string;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -751,6 +861,17 @@ export interface ReporterRegistrationSelect<T extends boolean = true> {
         image?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "privacy-policy_select".
+ */
+export interface PrivacyPolicySelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

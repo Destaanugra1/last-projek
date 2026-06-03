@@ -15,5 +15,6 @@
 @use 'berita';       /* Blog / news pages                            */
 @use 'profile';      /* Profile page, topbar user, modal, lapor gate */
 @use 'dashboard';    /* Public statistics dashboard                   */
+@use 'detail-new';    /* Redesigned Report Detail Page                */
 @use 'leaflet';      /* Leaflet map overrides & custom markers       */
 @use 'responsive';   /* Global breakpoint overrides (multi-page)     */

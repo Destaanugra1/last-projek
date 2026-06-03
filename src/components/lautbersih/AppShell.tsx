@@ -2,9 +2,11 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { getCurrentUser } from '@/lib/auth'
+import { AcetSidebar } from '@/components/ui/aceternity-sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 
 import { LogoutButton } from './LogoutButton'
+import { WorkspaceWrapper } from './WorkspaceWrapper'
 
 export const AppShell = async ({
   activePath,
@@ -54,10 +56,11 @@ export const AppShell = async ({
     }
 
   return (
-    <div className="lb-app-shell">
+    <AcetSidebar>
+    <div className="lb-app-shell min-h-screen w-full">
       <AppSidebar activeHref={navActiveHref} user={user} />
 
-      <div className="lb-workspace">
+      <WorkspaceWrapper>
         <header className="lb-topbar">
           <div className="lb-topbar__intro">
             <div>
@@ -92,7 +95,8 @@ export const AppShell = async ({
             </div>
           </header>
           <main className="lb-main">{children}</main>
-      </div>
+      </WorkspaceWrapper>
     </div>
+    </AcetSidebar>
   )
 }

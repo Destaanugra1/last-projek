@@ -1,7 +1,6 @@
 import { FileText, MapPin, Newspaper, Send, User, Users } from 'lucide-react'
 
 import {
-  AcetSidebar,
   AcetSidebarBody,
   AcetSidebarLink,
   AcetSidebarText,
@@ -34,8 +33,7 @@ export function AppSidebar({ activeHref, user }: Props) {
   })
 
   return (
-    <AcetSidebar>
-      <AcetSidebarBody className="lb-sidebar">
+      <AcetSidebarBody className="lb-sidebar flex flex-col h-full overflow-y-auto">
         {/* Brand */}
         <div className="lb-acet-brand">
           <span className="lb-brand__mark">L</span>
@@ -88,6 +86,5 @@ export function AppSidebar({ activeHref, user }: Props) {
           </AcetSidebarText>
         </div>
       </AcetSidebarBody>
-    </AcetSidebar>
   )
 }

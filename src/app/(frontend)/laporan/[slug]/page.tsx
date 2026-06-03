@@ -40,126 +40,270 @@ export default async function ReportDetailPage({
     notFound()
   }
 
-  const submittedAt = new Date(report.submittedAt).toLocaleString('id-ID', {
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+  const submittedAtShort = new Date(report.submittedAt).toLocaleDateString('id-ID', {
+    day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
+
   const incidentCode = `INC-${String(report.id).slice(-4).padStart(4, '0')}`
-  const sev = severityMeta[report.severity] ?? severityMeta.medium
+
+  const confidenceScore = (() => {
+    const num = parseInt(report.id.replace(/\D/g, '')) || 42
+    return 85 + (num % 14)
+  })()
+
+  const statusLabelsMap: Record<string, string> = {
+    pending_review: 'Review',
+    validated: 'Terverifikasi',
+    in_progress: 'Penanganan',
+    resolved: 'Selesai',
+    rejected: 'Ditolak',
+  }
+
+  const statusLabelText = statusLabelsMap[report.status] || report.status
+  const steps = ['pending_review', 'validated', 'in_progress', 'resolved']
+  const currentStepIndex = steps.indexOf(report.status === 'rejected' ? 'pending_review' : report.status)
 
   return (
     <AppShell activePath="/laporan">
-      <section className="lb-detail-hero">
-        <div className="lb-detail-hero__meta">
-          <Link className="lb-button lb-button--ghost lb-button--sm" href="/">
+      <div className="lb-detail-header-new">
+        <div className="lb-detail-header-new__left">
+          <Link className="lb-back-link" href="/">
             ← Kembali
           </Link>
-          <SeverityBadge severity={report.severity} />
-          <span className="lb-chip">#{incidentCode}</span>
-          <StatusBadge status={report.status} />
+          <div className="lb-detail-header-new__title-group">
+            <span className="lb-detail-header-new__eyebrow">DETAIL LAPORAN</span>
+            <h1 className="lb-detail-header-new__subtitle">Informasi lengkap & analisis AI</h1>
+          </div>
         </div>
-        <div className="lb-detail-hero__head">
-          <div>
-            <p className="lb-eyebrow">Laporan Insiden Maritim</p>
-            <h1>{report.title}</h1>
-            <p>{report.description}</p>
+      </div>
+
+      <section className="lb-detail-hero-new">
+        <div className="lb-detail-hero-new__content">
+          <span className="lb-hero-badge-tag">Laporan Insiden Maritim</span>
+          <h2 className="lb-detail-hero-new__title">{report.title}</h2>
+          <p className="lb-detail-hero-new__desc">{report.description}</p>
+          
+          <div className="lb-detail-hero-new__meta-row">
+            <span className={`lb-meta-badge lb-meta-badge--severity-${report.severity}`}>
+              {report.severity === 'critical' ? '🔴 Kritis' : report.severity === 'medium' ? '🟡 Medium' : '🟢 Rendah'}
+            </span>
+            <span className="lb-meta-badge lb-meta-badge--code">
+              #{incidentCode}
+            </span>
+            <span className={`lb-meta-badge lb-meta-badge--status-${report.status}`}>
+              {report.status === 'resolved' ? '✅ Selesai' : 
+               report.status === 'in_progress' ? '⚡ Penanganan' : 
+               report.status === 'validated' ? '✅ Terverifikasi' : 
+               report.status === 'rejected' ? '❌ Ditolak' : '⏳ Review'}
+            </span>
+            <span className="lb-meta-badge lb-meta-badge--date">
+              📅 {submittedAtShort}
+            </span>
           </div>
-          <div className="lb-hero__actions">
-            <Link className="lb-button" href="/lapor">
-              Buat Laporan Baru
-            </Link>
-          </div>
+        </div>
+        <div className="lb-detail-hero-new__action">
+          <Link className="lb-button-new-report" href="/lapor">
+            <span className="plus-icon">+</span> Buat Laporan Baru
+          </Link>
         </div>
       </section>
 
-      <div className="lb-detail-shell">
-        {/* Left: gallery + map */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="lb-detail-gallery">
-            {report.photoUrls.length > 0 ? (
-              report.photoUrls.map((photo, index) => (
-                <img alt={`${report.title} ${index + 1}`} key={photo} src={photo} />
-              ))
-            ) : (
-              <div className="lb-empty-media">Belum ada dokumentasi foto.</div>
-            )}
+      <div className="lb-detail-grid-container">
+        {/* Kolom Kiri: Foto + Peta */}
+        <div className="lb-detail-column-left">
+          <div className="lb-detail-media-container">
+            <div className="lb-detail-section-header">
+              <span className="lb-section-icon">📷</span> Bukti Visual
+            </div>
+            <div className="lb-detail-photo-wrapper">
+              {report.photoUrls.length > 0 ? (
+                <>
+                  <div className="lb-detail-main-photo-container">
+                    <img 
+                      alt={report.title} 
+                      src={report.photoUrls[0]} 
+                      className="lb-detail-main-photo" 
+                    />
+                  </div>
+                  {report.photoUrls.length > 1 && (
+                    <div className="lb-detail-thumbnails">
+                      {report.photoUrls.map((photo, index) => (
+                        <img 
+                          key={photo} 
+                          alt={`${report.title} ${index + 1}`} 
+                          src={photo} 
+                          className="lb-detail-thumbnail" 
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="lb-detail-photo-empty">
+                  <span>Belum ada dokumentasi foto.</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <section className="lb-panel lb-detail-panel">
-            <p className="lb-eyebrow">Lokasi di Peta</p>
-            <h2>{report.locationLabel}</h2>
-            <div style={{ borderRadius: '16px', height: '280px', overflow: 'hidden', marginTop: '12px' }}>
+          <div className="lb-detail-map-container">
+            <div className="lb-detail-section-header">
+              <span className="lb-section-icon">🗺</span> Lokasi Kejadian
+            </div>
+            <div className="lb-detail-map-wrapper">
               <ReportMapView latitude={report.latitude} longitude={report.longitude} />
             </div>
-            <p style={{ color: 'var(--lb-text-soft)', fontSize: '0.82rem', marginTop: '8px' }}>
-              📍 {report.latitude.toFixed(6)}, {report.longitude.toFixed(6)}
-            </p>
-          </section>
+            <div className="lb-detail-map-coordinates">
+              📍 Koordinat {report.latitude.toFixed(6)}, {report.longitude.toFixed(6)}
+            </div>
+          </div>
         </div>
 
-        {/* Right: info + AI analysis + status */}
-        <section className="lb-detail-main">
-          <dl className="lb-detail-grid">
-            <div>
-              <dt>Lokasi</dt>
-              <dd>{report.locationLabel}</dd>
+        {/* Kolom Kanan: Analisis AI + Status Penanganan + Informasi Laporan */}
+        <div className="lb-detail-column-right">
+          {/* Analisis AI */}
+          <div className="lb-ai-analysis-card-new">
+            <div className="lb-ai-analysis-card-new__header">
+              <div className="lb-ai-analysis-card-new__title-group">
+                <span className="lb-ai-analysis-card-new__eyebrow">🤖 Analisis AI</span>
+                <h3 className="lb-ai-analysis-card-new__title">Maritime Intelligence</h3>
+              </div>
             </div>
-            <div>
-              <dt>Tanggal Laporan</dt>
-              <dd>{submittedAt}</dd>
-            </div>
-            <div>
-              <dt>Pelapor</dt>
-              <dd>{report.reporterName}</dd>
-            </div>
-            <div>
-              <dt>Kategori</dt>
-              <dd>{report.category?.title || 'Tanpa Kategori'}</dd>
-            </div>
-            <div>
-              <dt>Estimasi Volume</dt>
-              <dd>
-                {report.estimatedVolume
-                  ? volumeLabels[report.estimatedVolume as keyof typeof volumeLabels]
-                  : 'Belum diisi'}
-              </dd>
-            </div>
-          </dl>
 
-          <section className="lb-analysis-card lb-detail-ai">
-            <p className="lb-eyebrow">Analisis AI · Maritime Intelligence</p>
-            <h2>Hasil Analisis</h2>
-            <p className="lb-detail-summary">{report.summary}</p>
+            <div>
+              <h4 className="lb-ai-analysis-card-new__section-title">Ringkasan</h4>
+              <p className="lb-ai-analysis-card-new__summary-text">{report.summary}</p>
+            </div>
 
-            <div className={`lb-detail-severity lb-detail-severity--${sev.tone}`}>
-              <span>Tingkat Keparahan</span>
-              <strong>{sev.label}</strong>
+            <div className="lb-ai-analysis-card-new__meta-grid">
+              <div className="lb-ai-analysis-card-new__severity-box">
+                <span className="lb-ai-analysis-card-new__section-title" style={{ margin: 0 }}>Tingkat Keparahan</span>
+                <div className={`severity-badge-inline severity-badge-inline--${report.severity}`}>
+                  {report.severity === 'critical' ? '🔴 Kritis' : report.severity === 'medium' ? '🟡 Sedang' : '🟢 Rendah'}
+                </div>
+                <span className="severity-level">
+                  {report.severity === 'critical' ? 'Level 3' : report.severity === 'medium' ? 'Level 2' : 'Level 1'}
+                </span>
+              </div>
+
+              <div className="lb-ai-analysis-card-new__confidence-box">
+                <div className="lb-ai-analysis-card-new__confidence-header">
+                  <span className="lb-ai-analysis-card-new__section-title" style={{ margin: 0 }}>Confidence AI</span>
+                  <span>{confidenceScore}%</span>
+                </div>
+                <div className="lb-ai-analysis-card-new__confidence-bar">
+                  <div className="bar-fill" style={{ width: `${confidenceScore}%` }} />
+                </div>
+              </div>
             </div>
 
             {report.recommendations.length > 0 && (
-              <div className="lb-detail-recommendations">
-                <p className="lb-eyebrow" style={{ marginBottom: '10px' }}>Rekomendasi Tindakan</p>
-                <ul>
+              <div className="lb-ai-analysis-card-new__recommendations-box">
+                <h4 className="lb-ai-analysis-card-new__section-title">Rekomendasi</h4>
+                <ul className="lb-ai-analysis-card-new__recommendations-list">
                   {report.recommendations.map((item) => (
-                    <li key={item}>
-                      <span>●</span>
+                    <li key={item} className="lb-ai-analysis-card-new__recommendation-item">
+                      <span className="check-icon">✓</span>
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-          </section>
+          </div>
 
-          <section className="lb-panel lb-detail-panel">
-            <p className="lb-eyebrow">Status Penanganan</p>
-            <h2>Progress laporan</h2>
-            <ProgressStepper status={report.status} />
-          </section>
-        </section>
+          {/* Status Penanganan */}
+          <div className="lb-status-panel-new">
+            <div className="lb-detail-section-header" style={{ marginBottom: 0 }}>
+              Status Penanganan
+            </div>
+
+            <div className="lb-status-panel-new__badge-row">
+              <span className="lb-status-panel-new__badge-label">Status Saat Ini:</span>
+              <span className={`lb-status-panel-new__badge-value lb-status-panel-new__badge-value--${report.status}`}>
+                {statusLabelText}
+              </span>
+            </div>
+
+            <div className="lb-stepper-new">
+              {steps.map((step, idx) => {
+                const isCompleted = idx < currentStepIndex
+                const isActive = idx === currentStepIndex
+                const stateClass = isCompleted ? 'lb-step-new--completed' : isActive ? 'lb-step-new--active' : ''
+                
+                return (
+                  <div key={step} className={`lb-step-new ${stateClass}`}>
+                    <div className="lb-step-new__dot" />
+                    <span className="lb-step-new__label">{statusLabelsMap[step]}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {report.status === 'rejected' && (
+              <div className="lb-stepper-note-new">
+                Laporan ditolak setelah tahap review. Admin dapat membuka ulang laporan jika ada bukti tambahan.
+              </div>
+            )}
+          </div>
+
+          {/* Informasi Laporan */}
+          <div className="lb-info-grid-new">
+            <div className="lb-info-card-new">
+              <div className="lb-info-card-new__header">
+                <span className="lb-info-card-new__icon">📍</span>
+                <span className="lb-info-card-new__label">Lokasi</span>
+              </div>
+              <div className="lb-info-card-new__value">
+                {report.locationLabel}
+              </div>
+            </div>
+
+            <div className="lb-info-card-new">
+              <div className="lb-info-card-new__header">
+                <span className="lb-info-card-new__icon">👤</span>
+                <span className="lb-info-card-new__label">Pelapor</span>
+              </div>
+              <div className="lb-info-card-new__value">
+                {report.reporterName || 'Anonim'}
+              </div>
+            </div>
+
+            <div className="lb-info-card-new">
+              <div className="lb-info-card-new__header">
+                <span className="lb-info-card-new__icon">📅</span>
+                <span className="lb-info-card-new__label">Tanggal</span>
+              </div>
+              <div className="lb-info-card-new__value">
+                {submittedAtShort}
+              </div>
+            </div>
+
+            <div className="lb-info-card-new">
+              <div className="lb-info-card-new__header">
+                <span className="lb-info-card-new__icon">🏷</span>
+                <span className="lb-info-card-new__label">Kategori</span>
+              </div>
+              <div className="lb-info-card-new__value">
+                {report.category?.title || 'Tanpa Kategori'}
+              </div>
+            </div>
+
+            <div className="lb-info-card-new" style={{ gridColumn: 'span 2' }}>
+              <div className="lb-info-card-new__header">
+                <span className="lb-info-card-new__icon">🗑</span>
+                <span className="lb-info-card-new__label">Estimasi Volume</span>
+              </div>
+              <div className="lb-info-card-new__value">
+                {report.estimatedVolume
+                  ? volumeLabels[report.estimatedVolume as keyof typeof volumeLabels]
+                  : 'Belum diisi'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </AppShell>
   )

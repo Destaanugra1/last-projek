@@ -6,6 +6,7 @@ import './styles/styles.scss'
 import { Footer } from '@/components/lautbersih/Footer'
 import { Navbar } from '@/components/lautbersih/Navbar'
 import { OceanCleanupPreloader } from '@/components/lautbersih/OceanCleanupPreloader'
+import { ScrollToTopButton } from '@/components/lautbersih/ScrollToTopButton'
 import { MaintenanceBarrier, type MaintenanceEntry } from '@/components/lautbersih/MaintenanceBarrier'
 import { getPayloadClient } from '@/lib/getPayloadClient'
 import { getCurrentUser } from '@/lib/auth'
@@ -91,8 +92,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           {children}
           <Footer />
         </div>
+        <ScrollToTopButton />
       </body>
     </html>
   )
 }
-

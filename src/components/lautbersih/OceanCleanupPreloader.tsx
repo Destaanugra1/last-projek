@@ -6,6 +6,13 @@ import { TextPlugin } from 'gsap/TextPlugin'
 
 gsap.registerPlugin(TextPlugin)
 
+const dispatchPreloaderComplete = () => {
+  if (typeof window !== 'undefined') {
+    window.__preloaderDone = true
+  }
+  window.dispatchEvent(new CustomEvent('lb:preloader-complete'))
+}
+
 const bubbles = [
   { id: 1, left: '10%', size: 12, delay: 0.1, duration: 4.8 },
   { id: 2, left: '22%', size: 7, delay: 1.2, duration: 5.5 },
@@ -33,6 +40,14 @@ export function OceanCleanupPreloader() {
       return
     }
 
+    if (typeof window !== 'undefined' && window.__preloaderDone) {
+      root.style.opacity = '0'
+      root.style.pointerEvents = 'none'
+      root.style.display = 'none'
+      gsap.set(mainContent, { opacity: 1, y: 0, clearProps: 'transform' })
+      return
+    }
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const loadingText = root.querySelector('.loading-text')
       const welcomeTimer = window.setTimeout(() => {
@@ -46,6 +61,7 @@ export function OceanCleanupPreloader() {
         root.style.opacity = '0'
         root.style.pointerEvents = 'none'
         root.style.display = 'none'
+        dispatchPreloaderComplete()
       }, 900)
 
       return () => {
@@ -101,6 +117,7 @@ export function OceanCleanupPreloader() {
           root.style.display = 'none'
           fishBob.kill()
           bubbleTweens.forEach((tween) => tween.kill())
+          dispatchPreloaderComplete()
         },
       })
 

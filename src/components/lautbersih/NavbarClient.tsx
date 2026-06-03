@@ -233,9 +233,9 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
         />
 
         <div className="relative z-10 flex items-center justify-between h-16 px-4">
-          <Link href="/" onClick={closeMenu} className="flex items-center gap-2.5">
+          <Link href="/" onClick={closeMenu} className="flex items-center gap-2.5 text-white">
             <span className="lb-global-nav__mark">L</span>
-            <span className="lb-global-nav__brand-name">LautBersih</span>
+            <span className="lb-global-nav__brand-name text-white">LautBersih</span>
           </Link>
 
           <button
@@ -253,7 +253,7 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
       {!isHomePage && <div className="hidden md:block h-16" />}
 
       {/* Spacer so content isn't hidden behind fixed mobile nav */}
-      <div className="md:hidden h-16" />
+      <div className="lb-mobile-nav-spacer md:hidden h-16" />
 
       {/* ── Mobile Overlay ─────────────────────────────────────────── */}
       {isMobileMenuOpen && (
@@ -278,7 +278,6 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
             <X size={18} />
           </button>
         </div>
-
         <div className="flex-1 overflow-y-auto py-5 px-4 flex flex-col gap-1.5">
           {navLinks.map((link) => {
             const isActive =
@@ -290,6 +289,7 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
                 key={link.href}
                 href={link.href}
                 onClick={closeMenu}
+                style={{ color: '#fff' }}
                 className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                   isActive
                     ? 'text-white bg-[#1d9e75]/15 border-l-2 border-[#1d9e75]'
@@ -325,10 +325,12 @@ export const NavbarClient = ({ user, initials, avatarUrl }: NavbarClientProps) =
           ) : (
             <div className="flex flex-col gap-3 px-2">
               <Link href="/login" onClick={closeMenu}
+                style={{ color: '#fff' }}
                 className="flex items-center justify-center w-full py-3 text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-semibold transition-colors">
                 Masuk
               </Link>
               <Link href="/register" onClick={closeMenu}
+                style={{ color: '#fff' }}
                 className="flex items-center justify-center w-full py-3 bg-[#1d9e75] text-white rounded-xl text-sm font-bold hover:bg-[#128b65] transition-colors">
                 Daftar
               </Link>

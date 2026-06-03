@@ -113,103 +113,107 @@ export default async function HomePage() {
 
   return (
     <div className="lb-home">
-      <HomeHero
-        badge={settings.heroBadge}
-        banners={settings.heroBanners}
-        description={settings.heroDescription}
-        primaryAction={settings.heroPrimaryAction}
-        secondaryAction={settings.heroSecondaryAction}
-        title={settings.heroTitle}
-      />
+      <div className="lb-home__hero-stage">
+        <HomeHero
+          badge={settings.heroBadge}
+          banners={settings.heroBanners}
+          description={settings.heroDescription}
+          primaryAction={settings.heroPrimaryAction}
+          secondaryAction={settings.heroSecondaryAction}
+          title={settings.heroTitle}
+        />
+      </div>
 
-      {partners.length > 0 && (
-        <section className="lb-home__partners">
-          <div className="lb-home__partners-head">
-            <div className="lb-home__partners-label">Dipercayai oleh</div>
-            <h2 className="lb-home__partners-title">Mitra Strategis Pelindung Maritim Indonesia</h2>
-          </div>
-          <div className="lb-home__partners-loop">
-            <LogoLoop
-              logos={partners
-                .map((partner) => {
-                  const logo = partner.logo as { cloudinaryUrl?: string; url?: string } | undefined
-                  const src = logo?.cloudinaryUrl || logo?.url || ''
-                  return {
-                    src,
-                    alt: partner.name,
-                    href: partner.website || undefined,
-                    title: partner.name,
-                  }
-                })
-                .filter((item) => item.src)}
-              speed={60}
-              direction="left"
-              logoHeight={96}
-              gap={80}
-              hoverSpeed={0}
-              fadeOut
-              fadeOutColor="#0b2540"
-              scaleOnHover
-              ariaLabel="Partner dan institusi yang dipercayai"
-            />
+      <div className="lb-home__content-stack">
+        {partners.length > 0 && (
+          <section className="lb-home__partners">
+            <div className="lb-home__partners-head">
+              <div className="lb-home__partners-label">Dipercayai oleh</div>
+              <h2 className="lb-home__partners-title">Mitra Strategis Pelindung Maritim Indonesia</h2>
+            </div>
+            <div className="lb-home__partners-loop">
+              <LogoLoop
+                logos={partners
+                  .map((partner) => {
+                    const logo = partner.logo as { cloudinaryUrl?: string; url?: string } | undefined
+                    const src = logo?.cloudinaryUrl || logo?.url || ''
+                    return {
+                      src,
+                      alt: partner.name,
+                      href: partner.website || undefined,
+                      title: partner.name,
+                    }
+                  })
+                  .filter((item) => item.src)}
+                speed={60}
+                direction="left"
+                logoHeight={96}
+                gap={80}
+                hoverSpeed={0}
+                fadeOut
+                fadeOutColor="#0b2540"
+                scaleOnHover
+                ariaLabel="Partner dan institusi yang dipercayai"
+              />
+            </div>
+          </section>
+        )}
+
+        {userRole === 'user' && user && (
+          <ReporterRegistrationCta
+            hasPendingApp={hasPendingApp}
+            steps={registrationSteps}
+            userId={user.id}
+          />
+        )}
+
+        <section className="lb-home__stats-wrap">
+          <div className="lb-home__stats-grid">
+            <div className="lb-home__stat-card">
+              <strong>{stats.total || 1284}</strong>
+              <span>Total Laporan</span>
+            </div>
+            <div className="lb-home__stat-card">
+              <strong className="is-danger">{stats.criticalCount || 42}</strong>
+              <span>Laporan Critical</span>
+              <small>Real-time sync</small>
+            </div>
+            <div className="lb-home__stat-card">
+              <strong className="is-success">98%</strong>
+              <span>Sudah Ditindak</span>
+              <small>Target KPI: 95%</small>
+            </div>
           </div>
         </section>
-      )}
 
-      {userRole === 'user' && user && (
-        <ReporterRegistrationCta
-          hasPendingApp={hasPendingApp}
-          steps={registrationSteps}
-          userId={user.id}
-        />
-      )}
+        <Suspense fallback={<LatestReportsSectionSkeleton />}>
+          <LatestReportsSection />
+        </Suspense>
 
-      <section className="lb-home__stats-wrap">
-        <div className="lb-home__stats-grid">
-          <div className="lb-home__stat-card">
-            <strong>{stats.total || 1284}</strong>
-            <span>Total Laporan</span>
+        <section className="lb-home__map-section">
+          <div className="lb-home__map-copy">
+            <h2>Peta Monitoring Interaktif</h2>
+            <p>
+              Visualisasi data spasial dari seluruh perairan Indonesia. Hubungkan data laporan dengan
+              visualisasi situasional yang lebih hidup dan futuristik.
+            </p>
+            <ul>
+              <li>Heatmap Polusi & Sampah</li>
+            </ul>
+            <Link className="lb-home__hero-primary" href="/petawilayah">
+              Buka Peta Wilayah
+            </Link>
           </div>
-          <div className="lb-home__stat-card">
-            <strong className="is-danger">{stats.criticalCount || 42}</strong>
-            <span>Laporan Critical</span>
-            <small>Real-time sync</small>
-          </div>
-          <div className="lb-home__stat-card">
-            <strong className="is-success">98%</strong>
-            <span>Sudah Ditindak</span>
-            <small>Target KPI: 95%</small>
-          </div>
-        </div>
-      </section>
 
-      <Suspense fallback={<LatestReportsSectionSkeleton />}>
-        <LatestReportsSection />
-      </Suspense>
+          <LautBersihGlobe reports={reports} />
+        </section>
+      </div>
 
-      <section className="lb-home__map-section">
-        <div className="lb-home__map-copy">
-          <h2>Peta Monitoring Interaktif</h2>
-          <p>
-            Visualisasi data spasial dari seluruh perairan Indonesia. Hubungkan data laporan dengan
-            visualisasi situasional yang lebih hidup dan futuristik.
-          </p>
-          <ul>
-            <li>Heatmap Polusi & Sampah</li>
-          </ul>
-          <Link className="lb-home__hero-primary" href="/petawilayah">
-            Buka Peta Wilayah
-          </Link>
-        </div>
-
-        <LautBersihGlobe reports={reports} />
-      </section>
-
-      {(userRole === 'admin' || userRole === 'reporter') && (
+      {/*{(userRole === 'admin' || userRole === 'reporter') && (
         <Link className="lb-home__fab" href="/lapor">
           +
         </Link>
-      )}
+      )}*/}
     </div>
   )
 }

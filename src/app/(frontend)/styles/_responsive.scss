@@ -288,6 +288,17 @@
 }
 
 @media (max-width: 640px) {
+  .lb-workspace {
+    gap: 16px;
+    padding: 0 16px 16px;
+  }
+
+  .lb-topbar {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    margin-top: 0;
+  }
+
   .lb-auth-topnav__links,
   .lb-auth-footer__inner div {
     display: none;
@@ -488,5 +499,15 @@
   .lb-map-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .lb-topbar {
+    display: none !important;
+  }
+
+  .lb-workspace {
+    padding-top: 16px !important;
   }
 }

@@ -1,15 +1,16 @@
 "use client"
 
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { AnimatePresence, motion } from "motion/react"
 import Link from "next/link"
 
 import { cn } from "@/lib/utils"
+import { usePreloaderDone } from "@/hooks/use-preloader-done"
 
 interface SidebarContextProps {
   open: boolean
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
-  animate: boolean
 }
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(undefined)
@@ -20,22 +21,10 @@ export const useAcetSidebar = () => {
   return context
 }
 
-export function AcetSidebar({
-  children,
-  open: openProp,
-  setOpen: setOpenProp,
-  animate = true,
-}: {
-  children: React.ReactNode
-  open?: boolean
-  setOpen?: React.Dispatch<React.SetStateAction<boolean>>
-  animate?: boolean
-}) {
-  const [openState, setOpenState] = useState(false)
-  const open = openProp ?? openState
-  const setOpen = setOpenProp ?? setOpenState
+export function AcetSidebar({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate }}>
+    <SidebarContext.Provider value={{ open, setOpen }}>
       {children}
     </SidebarContext.Provider>
   )
@@ -48,28 +37,72 @@ export function AcetSidebarBody({
   className?: string
   children: React.ReactNode
 }) {
-  const { open, setOpen, animate } = useAcetSidebar()
+  const { open, setOpen } = useAcetSidebar()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [mounted, setMounted] = useState(false)
+  // Sidebar (desktop) hanya dirender setelah preloader selesai
+  const preloaderDone = usePreloaderDone()
+
+  useEffect(() => {
+    setMounted(true)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  const handleMouseEnter = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setOpen(true)
+  }, [setOpen])
+
+  const handleMouseLeave = useCallback(() => {
+    timerRef.current = setTimeout(() => setOpen(false), 300)
+  }, [setOpen])
+
+  // Desktop sidebar: dirender via portal ke document.body agar position:fixed
+  // tidak terpengaruh oleh overflow-clip / transform / will-change parent manapun.
+  // Hanya dirender setelah preloader selesai (preloaderDone === true).
+  const desktopSidebar = (
+    <aside
+      className={cn(
+        "fixed left-0 top-0 h-screen z-[9998]",
+        "hidden md:flex flex-col",
+        "overflow-hidden",
+        "transition-all duration-300 ease-in-out",
+        open ? "w-64" : "w-20",
+      )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={cn("flex-1 min-h-0 overflow-y-auto", className)}>
+        {children}
+      </div>
+    </aside>
+  )
+
   return (
     <>
-      {/* Desktop — shown via CSS @media (min-width: 768px) */}
-      <motion.div
-        className={cn("lb-acet-desktop", className)}
-        animate={{ width: animate ? (open ? "260px" : "64px") : "260px" }}
-        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-      >
-        {children}
-      </motion.div>
+      {/* Portal ke body — bebas dari stacking context parent.
+          Tidak dirender sama sekali selama preloader aktif. */}
+      {mounted && preloaderDone && createPortal(desktopSidebar, document.body)}
 
-      {/* Mobile — hidden via CSS @media (min-width: 768px) */}
-      <AcetMobileSidebar>{children}</AcetMobileSidebar>
+      {/* Mobile drawer (tetap inline, tidak fixed terhadap viewport) */}
+      <AcetMobileSidebar>
+        <div className={cn("h-full", className)}>
+          {children}
+        </div>
+      </AcetMobileSidebar>
     </>
   )
 }
 
 function AcetMobileSidebar({ children }: { children: React.ReactNode }) {
   const { open, setOpen } = useAcetSidebar()
+  const preloaderDone = usePreloaderDone()
+
+  // Mobile drawer juga tidak dirender saat preloader aktif
+  if (!preloaderDone) return null
+
   return (
     <div className="lb-acet-mobile-bar">
       <button
@@ -113,20 +146,17 @@ export function AcetSidebarText({
   children: React.ReactNode
   className?: string
 }) {
-  const { open, animate } = useAcetSidebar()
+  const { open } = useAcetSidebar()
   return (
-    <motion.div
-      className={cn("lb-acet-collapsible-text", className)}
-      animate={{
-        opacity: animate ? (open ? 1 : 0) : 1,
-        width: animate ? (open ? "auto" : 0) : "auto",
-        height: animate ? (open ? "auto" : 0) : "auto",
-      }}
-      transition={{ duration: 0.18, ease: "easeInOut" }}
-      style={{ overflow: "hidden" }}
+    <div
+      className={cn(
+        "transition-all duration-300 overflow-hidden whitespace-nowrap",
+        open ? "opacity-100 max-w-60" : "opacity-0 max-w-0",
+        className,
+      )}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
@@ -143,7 +173,7 @@ export function AcetSidebarLink({
   isActive?: boolean
   className?: string
 }) {
-  const { open, animate } = useAcetSidebar()
+  const { open } = useAcetSidebar()
   return (
     <Link
       href={href}
@@ -154,16 +184,15 @@ export function AcetSidebarLink({
       )}
     >
       <span className="lb-acet-nav-link__icon">{icon}</span>
-      <motion.span
-        className="lb-acet-nav-link__label"
-        animate={{
-          opacity: animate ? (open ? 1 : 0) : 1,
-          width: animate ? (open ? "auto" : 0) : "auto",
-        }}
-        transition={{ duration: 0.18, ease: "easeInOut" }}
+      <span
+        className={cn(
+          "lb-acet-nav-link__label",
+          "transition-all duration-300 overflow-hidden whitespace-nowrap",
+          open ? "opacity-100 max-w-60" : "opacity-0 max-w-0",
+        )}
       >
         {label}
-      </motion.span>
+      </span>
     </Link>
   )
 }

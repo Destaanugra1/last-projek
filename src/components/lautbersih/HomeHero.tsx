@@ -2,9 +2,13 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 import type { SiteHeroAction, SiteHeroBanner } from '@/lib/reports'
+
+gsap.registerPlugin(ScrollTrigger)
 
 type HomeHeroProps = {
   badge: string
@@ -28,6 +32,8 @@ export function HomeHero({
   const [activeIndex, setActiveIndex] = useState(0)
   const [failedBannerIds, setFailedBannerIds] = useState<Record<string, boolean>>({})
   const [loadedBannerIds, setLoadedBannerIds] = useState<Record<string, boolean>>({})
+  const sectionRef = useRef<HTMLElement>(null)
+  const hasRevealedRef = useRef(false)
 
   const hasBanners = banners.length > 0
   const isCarousel = banners.length > 1
@@ -36,7 +42,6 @@ export function HomeHero({
   const activeBannerReady =
     !activeBanner || loadedBannerIds[activeBanner.id] || failedBannerIds[activeBanner.id]
   const detailEyebrow = activeBanner?.eyebrow || null
-  const detailTitle = activeBanner?.title || null
   const detailDescription = activeBanner?.description || description
 
   const markBannerFailed = (bannerId: string) => {
@@ -49,7 +54,6 @@ export function HomeHero({
 
   useEffect(() => {
     if (!isCarousel) {
-      setActiveIndex(0)
       return
     }
 
@@ -59,6 +63,115 @@ export function HomeHero({
 
     return () => window.clearInterval(timer)
   }, [banners.length, isCarousel])
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return
+    }
+
+    const section = sectionRef.current
+
+    if (!section) {
+      return
+    }
+
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1.1,
+        animation: gsap.timeline()
+          .to('.lb-home__hero-image', { yPercent: 11, scale: 1.08, ease: 'none' }, 0)
+          .to('.lb-home__hero-overlay', { yPercent: 8, opacity: 0.9, ease: 'none' }, 0)
+          .to('.lb-home__hero-vignette', { yPercent: -8, opacity: 1, ease: 'none' }, 0)
+          .to('.lb-home__hero-glass-left', { yPercent: -10, ease: 'none' }, 0)
+          .to('.lb-home__hero-glass-right', { yPercent: -14, ease: 'none' }, 0)
+          .to('.lb-home__wave', { yPercent: -22, ease: 'none' }, 0),
+      })
+    }, section)
+
+    return () => ctx.revert()
+  }, [])
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return
+    }
+
+    const section = sectionRef.current
+
+    if (!section) {
+      return
+    }
+
+    const runReveal = () => {
+      if (hasRevealedRef.current) {
+        return
+      }
+
+      hasRevealedRef.current = true
+
+      gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+
+        tl.fromTo(
+          '.lb-home__hero-base-fill',
+          { scale: 1.08, opacity: 0.72 },
+          { scale: 1, opacity: 1, duration: 1.1 },
+        )
+          .fromTo(
+            '.lb-home__hero-image',
+            { scale: 1.1, opacity: 0.22 },
+            { scale: 1, opacity: 1, duration: 1.15 },
+            0,
+          )
+          .fromTo(
+            '.lb-home__hero-overlay, .lb-home__hero-vignette',
+            { opacity: 0 },
+            { opacity: 1, duration: 0.9 },
+            0.08,
+          )
+          .fromTo(
+            '.lb-home__hero-glass-left',
+            { autoAlpha: 0, x: -44, y: 20 },
+            { autoAlpha: 1, x: 0, y: 0, duration: 0.7 },
+            0.16,
+          )
+          .fromTo(
+            '.lb-home__hero-glass-right',
+            { autoAlpha: 0, x: 54, y: 24 },
+            { autoAlpha: 1, x: 0, y: 0, duration: 0.76 },
+            0.24,
+          )
+          .fromTo(
+            '.lb-home__hero-actions > *',
+            { autoAlpha: 0, y: 18 },
+            { autoAlpha: 1, y: 0, duration: 0.46, stagger: 0.08 },
+            0.42,
+          )
+          .fromTo(
+            '.lb-home__hero-indicators button, .lb-home__wave',
+            { autoAlpha: 0, y: 16 },
+            { autoAlpha: 1, y: 0, duration: 0.56, stagger: 0.06 },
+            0.5,
+          )
+      }, section)
+    }
+
+    const preloaderEl = document.querySelector('.preloader')
+    const preloaderVisible =
+      preloaderEl instanceof HTMLElement &&
+      preloaderEl.style.display !== 'none' &&
+      preloaderEl.style.opacity !== '0'
+    const fallbackTimer = window.setTimeout(runReveal, preloaderVisible ? 1300 : 140)
+    window.addEventListener('lb:preloader-complete', runReveal)
+
+    return () => {
+      window.clearTimeout(fallbackTimer)
+      window.removeEventListener('lb:preloader-complete', runReveal)
+    }
+  }, [])
 
   const renderBannerImage = (banner: SiteHeroBanner, priority = false) => {
     if (failedBannerIds[banner.id]) {
@@ -81,8 +194,9 @@ export function HomeHero({
   }
 
   return (
-    <section className="lb-home__hero">
+    <section ref={sectionRef} className="lb-home__hero">
       <div className="lb-home__hero-media" aria-hidden="true">
+        <div className="lb-home__hero-base-fill" />
         {isCarousel ? (
           <div aria-label="Banner hero LautBersih" aria-roledescription="carousel" className="lb-home__hero-carousel">
             {banners.map((banner, index) => {

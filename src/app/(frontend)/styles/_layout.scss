@@ -303,12 +303,15 @@
 
 body:has(.lb-app-shell) .lb-global-nav,
 body:has(.lb-app-shell) .lb-mobile-nav-wrap,
+body:has(.lb-app-shell) .lb-mobile-nav-spacer,
 body:has(.lb-app-shell) .lb-global-footer,
 body:has(.lb-auth-page) .lb-global-nav,
 body:has(.lb-auth-page) .lb-mobile-nav-wrap,
+body:has(.lb-auth-page) .lb-mobile-nav-spacer,
 body:has(.lb-auth-page) .lb-global-footer,
 body:has(.lb-onboarding-shell) .lb-global-nav,
 body:has(.lb-onboarding-shell) .lb-mobile-nav-wrap,
+body:has(.lb-onboarding-shell) .lb-mobile-nav-spacer,
 body:has(.lb-onboarding-shell) .lb-global-footer {
   display: none;
 }

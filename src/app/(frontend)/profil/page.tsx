@@ -302,7 +302,7 @@ export default async function ProfilPage() {
             </div>
           </div>
 
-          <div className="lb-panel lb-profile-category-card">
+          {/*<div className="lb-panel lb-profile-category-card">
             <h3 className="lb-eyebrow">Kategori Dominan</h3>
             <div className="lb-profile-category-list">
               {topCategories.length > 0 ? (
@@ -319,9 +319,9 @@ export default async function ProfilPage() {
                 <p className="lb-profile-empty">Belum ada data kategori.</p>
               )}
             </div>
-          </div>
+          </div>*/}
 
-          <div className="lb-panel lb-profile-security-card">
+          {/*<div className="lb-panel lb-profile-security-card">
             <h3 className="lb-eyebrow">Pengaturan Keamanan</h3>
             <div className="lb-profile-security-list">
               <div className="lb-profile-security-divider" />
@@ -330,7 +330,7 @@ export default async function ProfilPage() {
                 <LogoutButton variant="security" />
               </div>
             </div>
-          </div>
+          </div>*/}
         </div>
       </div>
     </AppShell>

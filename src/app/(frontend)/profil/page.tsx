@@ -33,7 +33,7 @@ type ProfileUser = {
   id: number | string
   fullName?: string | null
   email: string
-  role?: 'admin' | 'reporter' | null
+  role?: 'admin' | 'reporter' | 'user' | null
   verifiedVolunteer?: boolean | null
   points?: number | null
   phone?: string | null
@@ -83,12 +83,20 @@ export default async function ProfilPage() {
             )}
           </div>
           <div className="lb-profile-header__status">
-            {user?.role === 'admin' ? 'Administrator' : 'Reporter'}
+            {user?.role === 'admin'
+              ? 'Administrator'
+              : user?.role === 'reporter'
+              ? 'Reporter'
+              : 'User'}
           </div>
         </div>
         <div className="lb-profile-header__identity">
           <p className="lb-eyebrow">
-            {user?.role === 'admin' ? 'System Administrator' : 'Reporter Lapangan'}
+            {user?.role === 'admin'
+              ? 'System Administrator'
+              : user?.role === 'reporter'
+              ? 'Reporter Lapangan'
+              : 'Pengguna Umum'}
           </p>
           <h1>{displayName}</h1>
           <div className="lb-profile-header__meta-row">
@@ -162,7 +170,11 @@ export default async function ProfilPage() {
               <div className="lb-profile-info-item">
                 <label>Role</label>
                 <span className="lb-profile-role-badge">
-                  {user?.role === 'admin' ? 'Admin' : 'Reporter'}
+                  {user?.role === 'admin'
+                    ? 'Admin'
+                    : user?.role === 'reporter'
+                    ? 'Reporter'
+                    : 'User'}
                 </span>
               </div>
               <div className="lb-profile-info-item">

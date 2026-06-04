@@ -227,6 +227,16 @@ export const ReportFormExperience = ({
 
   const onPhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : []
+    const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+    const tooLarge = files.find((f) => f.size > MAX_SIZE)
+
+    if (tooLarge) {
+      setSubmitError(`Ukuran foto "${tooLarge.name}" melebihi batas maksimum 5MB.`)
+      e.target.value = ''
+      setPhotos([])
+      return
+    }
+
     setPhotos(files)
     setIsOutOfContext(false)
     setGenDescError(null)
@@ -390,6 +400,13 @@ export const ReportFormExperience = ({
                   return
                 }
 
+                const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+                const tooLarge = photos.find((f) => f.size > MAX_SIZE)
+                if (tooLarge) {
+                  setSubmitError(`Ukuran foto "${tooLarge.name}" melebihi batas maksimum 5MB.`)
+                  return
+                }
+
                 if (analysisState.phase !== 'ready') {
                   setSubmitError(
                     'Generate foto terlebih dahulu. Laporan hanya bisa dikirim setelah analisis foto selesai.',
@@ -546,7 +563,7 @@ export const ReportFormExperience = ({
               </div>
 
               <div className="lb-reporting-field">
-                <label htmlFor="report-photos">Foto Bukti</label>
+                <label htmlFor="report-photos">Foto Bukti (Maks. 5MB per file)</label>
                 <input
                   accept="image/png,image/jpeg,image/webp"
                   id="report-photos"
@@ -555,6 +572,9 @@ export const ReportFormExperience = ({
                   onChange={onPhotosChange}
                   type="file"
                 />
+                <span className="lb-reporting-field-hint" style={{ fontSize: '0.85rem', color: '#888', marginTop: '0.25rem', display: 'block' }}>
+                  Format: PNG, JPEG, WEBP. Maksimal ukuran file: 5MB.
+                </span>
                 <button
                   className={`lb-reporting-gen-btn${isGenPending ? ' is-loading' : ''}`}
                   disabled={photos.length === 0 || isGenPending}

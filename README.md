@@ -1,67 +1,146 @@
-# Payload Blank Template
+# LautBersih 🌊
+**Platform Pelaporan & Analisis Sampah Laut Berbasis Komunitas & AI**
 
-This template comes configured with the bare minimum to get started on anything you need.
+*Proyek Akhir (Final Project) Program Kampus Merdeka MSIB Batch 6 - Studi Independen: AI & Web Development + UI/UX Design*
 
-## Quick start
+---
 
-This template can be deployed directly from our Cloud hosting and it will setup MongoDB and cloud S3 object storage for media.
+## 📌 Deskripsi Proyek
+**LautBersih** adalah platform berbasis web responsif yang dirancang untuk mengatasi krisis pencemaran sampah plastik dan limbah laut di wilayah pesisir Indonesia (dengan studi kasus utama di Teluk Lampung). Platform ini mengadopsi pendekatan *community science* (sains berbasis komunitas) yang memungkinkan nelayan, relawan lingkungan, dan masyarakat pesisir untuk melaporkan temuan akumulasi sampah laut secara real-time dan akurat.
 
-## Quick Start - local setup
+Dengan mengintegrasikan **Artificial Intelligence (Google Gemini 2.5 Flash)** melalui Server Actions Next.js, setiap laporan yang diunggah akan dianalisis secara instan untuk:
+1. **Mengklasifikasikan kategori sampah** (misalnya Sampah Plastik sekali pakai, Alat Tangkap/Jaring Rusak, Limbah Industri, Organik, atau Tumpahan Minyak).
+2. **Menilai tingkat kedaruratan (*severity level*)** secara objektif (Low, Medium, Critical) berdasarkan analisis visual foto dan deskripsi teks.
+3. **Memformulasikan rekomendasi aksi mitigasi** yang aman bagi pelapor maupun komunitas (mis. penanganan langsung oleh komunitas atau eskalasi darurat ke dinas kebersihan terkait jika terindikasi bahan berbahaya B3).
 
-To spin up this template locally, follow these steps:
+Sistem ini memotong rantai birokrasi pelaporan manual tradisional yang lambat, memberikan validasi visual digital awal untuk menyaring laporan palsu (*spam*), serta mempermudah Dinas Lingkungan Hidup dan NGO lokal melakukan koordinasi pembersihan (*cleanup action*) secara efisien dan tepat sasaran.
 
-### Clone
+---
 
-After you click the `Deploy` button above, you'll want to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
+## 👥 Profil Kelompok
+Proyek ini dikembangkan oleh Kelompok yang beranggotakan:
+* **Althaf Syafiq Rianto**
+* **Desta Anugra Pratama**
+* **Adisya Ainun Fatihah**
+* **Achmad Suhendar**
 
-### Development
+---
 
-1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URL` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+## 🚀 Fitur Utama (MVP Core & Nice-to-Have)
+* 🗺️ **Peta Interaktif Pesisir (Leaflet.js)**: Menyajikan peta sebaran spasial laporan pencemaran dengan penanda pin berwarna dinamis sesuai tingkat keparahan (*Hijau: Low*, *Kuning: Medium*, *Merah: Critical*), lengkap dengan filter kategori sampah dan pencarian lokasi.
+* 🧠 **Multimodal AI Analysis (Gemini 2.5 Flash)**: Engine analisis cerdas yang mendeteksi keaslian foto laporan secara instan, mengekstrak ringkasan kondisi, dan mengembalikan data terstruktur (Structured Output JSON) berupa kategori, tingkat keparahan, serta instruksi keselamatan khusus.
+* 📋 **Form Pelaporan Cerdas**: Pengguna dapat menentukan lokasi laporan dengan memanfaatkan titik koordinat GPS otomatis atau penunjuk manual peta (*coordinate picker*), mengunggah bukti foto, serta mengisi deskripsi tumpukan sampah.
+* 📊 **Dashboard Ringkasan & Metrik Analitik**: Halaman statistika makro yang memvisualisasikan total laporan aktif, jumlah kasus kritis, status penyelesaian laporan, grafik breakdown kategori sampah, serta area yang paling terdampak.
+* 🛠️ **Admin Panel & Moderasi (Payload CMS)**: Konsol back-office bagi tim internal atau dinas terkait untuk memoderasi data masuk (persetujuan/penolakan laporan), mengedit rekomendasi aksi, serta melacak progres penanganan sampah (*Status Tracking: Menunggu Review, Tervalidasi, Ditolak, Dalam Penanganan, Selesai*).
+* 👤 **Manajemen Akun & Validasi Reporter**: Sistem pendaftaran resmi bagi pelapor/relawan lapangan melalui formulir digital ([Reporter Registration](./src/app/(frontend)/registrasi-reporter/)), riwayat pengiriman laporan pribadi, serta dashboard pelapor.
+* 🌐 **Visualisasi Globe 3D**: Antarmuka visual 3D Globe interaktif berbasis Three.js/Three-Globe untuk menunjukkan distribusi laporan maritim secara dinamis dan modern di halaman beranda.
 
-3. `pnpm install && pnpm dev` to install dependencies and start the dev server
-4. open `http://localhost:3000` to open the app in your browser
+---
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+## 🛠️ Teknologi & Arsitektur (Tech Stack)
+* **Frontend & Server Framework**: Next.js v16.2.6 & React v19.2.6 (App Router, Server Actions, Server-Side Rendering)
+* **Styling & UI**: Tailwind CSS v4, Lucide React (ikon), Radix UI (komponen primitif), Framer Motion & GSAP (animasi premium/micro-interactions)
+* **Headless CMS**: Payload CMS v3.84.1 (ESM native, fully typed, custom admin views)
+* **Database**: PostgreSQL (neon.tech Cloud Database Serverless)
+* **Media Storage Cloud**: Cloudinary (diintegrasikan langsung via hook upload/delete media Payload CMS secara server-side)
+* **AI Engine**: `@google/generative-ai` dengan model `gemini-2.5-flash` untuk pemrosesan multimodal yang efisien dan cepat
+* **Sains Spasial**: Leaflet.js untuk pemetaan 2D responsif tanpa membebani performa browser
+* **Testing Suite**: Vitest (Integration tests) & Playwright (End-to-End browser testing)
 
-#### Docker (Optional)
+---
 
-If you prefer to use Docker for local development instead of a local MongoDB instance, the provided docker-compose.yml file can be used.
+## 📂 Struktur Direktori Penting
+Berikut adalah gambaran umum berkas-berkas kunci dalam proyek ini:
+* `src/app/(frontend)/` : Berisi halaman-halaman rute aplikasi web Next.js seperti `/dashboard`, `/lapor`, `/laporan`, `/petawilayah`, `/komunitas`, `/berita`, dan sistem autentikasi (`/login`, `/register`).
+* `src/app/(frontend)/lapor/analyze.ts` : Berisi Server Action yang menangani komunikasi multimodal API ke Gemini 2.5 Flash untuk analisis foto/deskripsi laporan secara real-time.
+* `src/collections/` : Konfigurasi skema database & model CMS Payload:
+  * [`Reports.ts`](./src/collections/Reports.ts) : Skema data laporan sampah (judul, koordinat, foto, volume, status, dan grup analisis AI).
+  * [`ReporterApplications.ts`](./src/collections/ReporterApplications.ts) : Skema formulir pendaftaran akun reporter/relawan terverifikasi.
+  * [`Users.ts`](./src/collections/Users.ts) : Skema data pengguna dan sistem hak akses (*roles*).
+  * [`Media.ts`](./src/collections/Media.ts) : Handler file upload yang dikonfigurasi menggunakan hook Cloudinary.
+  * [`WasteCategories.ts`](./src/collections/WasteCategories.ts) : Manajemen taksonomi kategori jenis sampah pesisir.
+* `src/components/lautbersih/` : Komponen antarmuka kustom LautBersih seperti:
+  * `MapMonitoringExperience.tsx` : Halaman monitor peta spasial interaktif.
+  * `ReportFormExperience.tsx` : Alur pendaftaran laporan multi-step dengan validasi AI.
+  * `LautBersihGlobe.tsx` : Komponen globe 3D modern.
+* `tests/` : Kumpulan berkas pengujian sistem (Integration & E2E).
 
-To do so, follow these steps:
+---
 
-- Modify the `MONGODB_URL` in your `.env` file to `mongodb://127.0.0.1/<dbname>`
-- Modify the `docker-compose.yml` file's `MONGODB_URL` to match the above `<dbname>`
-- Run `docker-compose up` to start the database, optionally pass `-d` to run in the background.
+## ⚙️ Persiapan & Instalasi Lokal
 
-## How it works
+Ikuti panduan langkah demi langkah berikut untuk menjalankan proyek ini di lingkungan lokal Anda:
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+### 1. Prasyarat (Prerequisites)
+Pastikan komputer Anda telah terpasang:
+* **Node.js** (rekomendasi versi `^18.20.2` atau `>=20.9.0`)
+* Package Manager **pnpm** (versi `^9` atau `^10`)
 
-### Collections
+### 2. Kloning Repositori
+```bash
+git clone https://github.com/Destaanugra1/last-projek.git
+cd last-projek
+```
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+### 3. Konfigurasi Environment Variables (`.env`)
+Buat file konfigurasi `.env` dengan menyalin file contoh `.env.example`:
+```bash
+cp .env.example .env
+```
+Buka file `.env` yang baru dibuat dan isi variabel-variabel kredensial berikut sesuai dengan akun layanan Anda:
+```env
+# Koneksi Database PostgreSQL
+DATABASE_URL=postgresql://username:password@your-neon-host/dbname?sslmode=require
 
-- #### Users (Authentication)
+# Kunci Keamanan Payload CMS
+PAYLOAD_SECRET=ganti_dengan_rahasia_payload_acak_anda
 
-  Users are auth-enabled collections that have access to the admin panel.
+# Konfigurasi Akun Cloudinary (Penyimpanan Foto)
+CLOUDINARY_CLOUD_NAME=isi_cloud_name_cloudinary_anda
+CLOUDINARY_API_KEY=isi_api_key_cloudinary_anda
+CLOUDINARY_API_SECRET=isi_api_secret_cloudinary_anda
 
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/3.x/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+# Gemini API Key (Dapatkan di https://aistudio.google.com/)
+GEMINI_API_KEY=isi_kunci_api_gemini_anda
+```
 
-- #### Media
+### 4. Instalasi Dependensi Proyek
+```bash
+pnpm install
+```
 
-  This is the uploads enabled collection. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
+### 5. Menjalankan Server Pengembangan (Development Server)
+Jalankan perintah di bawah ini untuk mengaktifkan server Next.js lokal:
+```bash
+pnpm dev
+# Atau jalankan devsafe jika ingin menghapus cache build .next terlebih dahulu:
+pnpm devsafe
+```
+Buka browser dan akses alamat berikut:
+* **Aplikasi LautBersih (Frontend)**: `http://localhost:3000`
+* **Admin Panel CMS (Backend)**: `http://localhost:3000/admin` (Sistem akan meminta Anda untuk membuat akun administrator pertama kali)
 
-### Docker
+---
 
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
+## 🧪 Menjalankan Unit & System Testing
+Proyek ini dilengkapi dengan skrip uji otomatis untuk menjamin keandalan sistem sebelum diproduksi:
 
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
+* **Menjalankan Seluruh Pengujian (Integration + E2E)** secara berurutan:
+  ```bash
+  pnpm test
+  ```
+* **Menjalankan Pengujian Integrasi (Vitest + jsdom)**:
+  ```bash
+  pnpm test:int
+  ```
+* **Menjalankan Pengujian End-to-End (Playwright)**:
+  ```bash
+  pnpm test:e2e
+  ```
 
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
+---
 
-## Questions
+## 🌊 Dampak SDGs (Sustainable Development Goals)
+Proyek LautBersih berkomitmen secara aktif untuk mendukung **SDG 14: Life Below Water**, khususnya target **14.1**: *mencegah dan secara signifikan mengurangi segala jenis polusi laut, khususnya dari aktivitas daratan, termasuk sampah laut dan polusi nutrisi pada tahun 2025*.
 
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+Dengan menyediakan platform berbasis data yang kredibel dan divalidasi oleh kecerdasan buatan, LautBersih tidak hanya mengedukasi masyarakat, melainkan mempercepat penanganan pencemaran laut Indonesia secara kolektif demi masa depan ekosistem pesisir yang bersih dan berkelanjutan.

@@ -1,0 +1,165 @@
+%% ====================================================================
+%% MERMAID ERD: LAUTBERSIH DATABASE ERD SCHEMA
+%% ====================================================================
+%% Cara Import ke Draw.io (diagrams.net):
+%% 1. Buka Draw.io.
+%% 2. Klik menu di bagian atas: Arrange > Insert > Advanced > Mermaid...
+%%    (Atau: Atur > Sisipkan > Tingkat Lanjut > Mermaid...)
+%% 3. Salin dan tempelkan (paste) kode di bawah ini ke box, lalu klik "Insert".
+%% ====================================================================
+
+erDiagram
+    USERS {
+        string id PK
+        string email UNIQUE
+        string fullName
+        string role "admin | reporter | user"
+        string phone
+        string organization
+        string avatarUrl
+        string avatarPublicId
+        boolean verifiedVolunteer
+        int points
+        date createdAt
+        date updatedAt
+    }
+
+    MEDIA {
+        string id PK
+        string alt
+        string cloudinaryUrl
+        string cloudinaryPublicId
+        string cloudinaryResourceType "image | raw"
+        string filename
+        string mimeType
+        int filesize
+        int width
+        int height
+        date createdAt
+        date updatedAt
+    }
+
+    WASTE_CATEGORIES {
+        string id PK
+        string title
+        string slug UNIQUE
+        string description
+        string color
+        date createdAt
+        date updatedAt
+    }
+
+    REPORTS {
+        string id PK
+        string title
+        string slug UNIQUE
+        string status "pending_review | validated | rejected | in_progress | resolved"
+        string severity "low | medium | critical"
+        string locationLabel
+        double latitude
+        double longitude
+        string description
+        string estimatedVolume "small | medium | large | very_large"
+        string category_id FK
+        string reporterName
+        string reporterEmail
+        string reportedBy_id FK
+        date submittedAt
+        string ai_summary
+        double ai_confidence
+        string adminNotes
+        date createdAt
+        date updatedAt
+    }
+
+    REPORTS_PHOTOS {
+        string report_id FK, PK
+        string media_id FK, PK
+    }
+
+    REPORTER_APPLICATIONS {
+        string id PK
+        string user_id FK
+        string nama_lengkap
+        string alamat
+        string no_hp
+        string foto_cv_id FK
+        string foto_profil_id FK
+        string status "pending | approved | rejected"
+        string alasan_penolakan
+        date createdAt
+        date updatedAt
+    }
+
+    BLOG_POSTS {
+        string id PK
+        string title
+        string slug UNIQUE
+        string excerpt
+        string content
+        string coverImage_id FK
+        string category_id FK
+        string sourceReport_id FK
+        string locationLabel
+        string severity "low | medium | critical"
+        date publishedAt
+        boolean isAiGenerated
+        date createdAt
+        date updatedAt
+    }
+
+    PARTNERS {
+        string id PK
+        string name
+        string logo_id FK
+        string website
+        int order
+        boolean isActive
+        date createdAt
+        date updatedAt
+    }
+
+    MAINTENANCE_PAGES {
+        string id PK
+        string pageRoute UNIQUE
+        boolean isActive
+        boolean allowAdmins
+        boolean applyOnDev
+        string title
+        string content
+        date createdAt
+        date updatedAt
+    }
+
+    %% Relationships (One-to-Many / One-to-One / Many-to-Many)
+    
+    %% Satu User memiliki nol atau banyak Laporan (One-to-Many)
+    USERS ||--o{ REPORTS : "makes"
+    
+    %% Satu Kategori Sampah memiliki nol atau banyak Laporan (One-to-Many)
+    WASTE_CATEGORIES ||--o{ REPORTS : "categorizes"
+    
+    %% Relasi Many-to-Many antara Reports dan Media lewat tabel junction
+    REPORTS ||--o{ REPORTS_PHOTOS : "has"
+    MEDIA ||--o{ REPORTS_PHOTOS : "contains"
+    
+    %% Satu User mengajukan satu berkas lamaran reporter (One-to-One / Zero-to-One)
+    USERS ||--|| REPORTER_APPLICATIONS : "applies"
+    
+    %% Berkas lamaran reporter merujuk ke satu berkas media CV (One-to-One)
+    MEDIA ||--|| REPORTER_APPLICATIONS : "foto_cv"
+    
+    %% Berkas lamaran reporter merujuk ke satu berkas media foto profil lama (Many-to-One / Optional)
+    MEDIA ||--o{ REPORTER_APPLICATIONS : "foto_profil"
+    
+    %% Satu Media menjadi sampul dari nol atau banyak artikel blog (One-to-Many)
+    MEDIA ||--o{ BLOG_POSTS : "coverImage"
+    
+    %% Satu Kategori Sampah memiliki nol atau banyak artikel blog (One-to-Many)
+    WASTE_CATEGORIES ||--o{ BLOG_POSTS : "categorizes"
+    
+    %% Satu Laporan Sampah mengacu ke nol atau banyak artikel blog (One-to-Many)
+    REPORTS ||--o{ BLOG_POSTS : "sourceReport"
+    
+    %% Satu Media menjadi logo dari nol atau banyak Partner (One-to-Many)
+    MEDIA ||--o{ PARTNERS : "logo"

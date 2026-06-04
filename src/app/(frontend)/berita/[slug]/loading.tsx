@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Loading() {
   return (
-    <main className="lb-news-page" aria-busy="true" aria-live="polite">
+    <main className="lb-news-page lb-berita-detail-loading" aria-busy="true" aria-live="polite">
       <div className="lb-berita-detail-nav">
         <Skeleton className="h-9 w-32" />
         <Skeleton className="h-9 w-44" />

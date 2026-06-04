@@ -17,22 +17,79 @@ export type PhotoFullAnalysis = {
   summary: string
 }
 
+export type GeminiAnalysis = {
+  categoryLabel: string
+  confidence: string
+  recommendations: string[]
+  severity: string
+  severityTone: 'critical' | 'moderate' | 'safe'
+  summary: string
+}
+
+// Helper to call GitHub Models API (Primary: gpt-4o-mini, Secondary: gpt-4o)
+const callGitHubModelsWithFallback = async (
+  messages: Array<{ role: string; content: any }>,
+  jsonMode: boolean = true,
+): Promise<any> => {
+  const token = process.env.GITHUB_TOKEN
+  if (!token) throw new Error('GITHUB_TOKEN belum dikonfigurasi di .env.')
+
+  const models = ['gpt-4o-mini', 'gpt-4o']
+  let lastError: unknown
+
+  for (const modelName of models) {
+    try {
+      console.log(`[GitHub Models] Menghubungi model: ${modelName}...`)
+      const body: any = {
+        model: modelName,
+        messages,
+      }
+
+      if (jsonMode) {
+        body.response_format = { type: 'json_object' }
+      }
+
+      const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`)
+      }
+
+      const result = await response.json()
+      const raw = result.choices?.[0]?.message?.content?.trim()
+      if (!raw) throw new Error('Respons kosong dari model.')
+
+      console.log(`[GitHub Models] Sukses menggunakan model: ${modelName}`)
+      return jsonMode ? JSON.parse(raw) : raw
+    } catch (err: any) {
+      console.warn(`[GitHub Models] Gagal menggunakan model ${modelName}:`, err.message)
+      lastError = err
+    }
+  }
+
+  throw lastError
+}
+
 export const analyzePhotoComplete = async (data: {
   photoBase64: string
   mimeType: string
   title?: string
   coordinates?: string
 }): Promise<PhotoFullAnalysis> => {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
-
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const MODELS = ['gemini-2.5-flash']
-
   const ctx = [
     data.title ? `- Judul: ${data.title}` : null,
     data.coordinates ? `- Koordinat: ${data.coordinates}` : null,
-  ].filter(Boolean).join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   const prompt = `Anda adalah sistem AI LautBersih Indonesia. Analisis foto ini.
 
@@ -53,7 +110,7 @@ JIKA foto mengandung unsur laut/pantai/pesisir, gunakan PEDOMAN KLASIFIKASI beri
 ${ctx ? `\nKonteks:\n${ctx}\n` : ''}
 Kembalikan HANYA JSON:
 {
-  "description": "<2-4 kalimat Bahasa Indonesia deskripsi visual foto>",
+  "description": "<deskripsi visual foto secara sangat detail dalam Bahasa Indonesia, minimal 2 paragraf. Jelaskan secara sangat rinci objek-objek yang ada di foto, kondisi lingkungan perairan/pesisir, jenis sampah/polutan/aktivitas jika ada, perkiraan tingkat kebersihan, serta suasana keseluruhan foto. Jangan membuat deskripsi yang terlalu pendek atau hanya satu paragraf.>",
   "categoryLabel": "<Tidak Relevan | Sampah Plastik | Tumpahan Minyak | Limbah Industri | Sampah Organik | Kondisi Pantai Bersih | Kerusakan Ekosistem>",
   "confidence": "<persentase, contoh 91.3%>",
   "severity": "<LUAR KONTEKS | WASPADA (LEVEL 1) | MODERAT (LEVEL 2) | SERIUS (LEVEL 3) | KRITIS (LEVEL 4)>",
@@ -62,9 +119,43 @@ Kembalikan HANYA JSON:
   "recommendations": ["<tindakan 1>", "<tindakan 2>", "<tindakan 3>"]
 }`
 
+  // 1. Try GitHub Models First (gpt-4o-mini -> gpt-4o)
+  if (process.env.GITHUB_TOKEN) {
+    try {
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${data.mimeType};base64,${data.photoBase64}`,
+              },
+            },
+          ],
+        },
+      ]
+      const parsed = (await callGitHubModelsWithFallback(messages, true)) as PhotoFullAnalysis
+      if (parsed.description && parsed.severity) {
+        return parsed
+      }
+    } catch (err: any) {
+      console.warn('[Fallback] GitHub Models gagal sepenuhnya, berpindah ke Gemini API (Raja Terakhir)...')
+    }
+  }
+
+  // 2. Fallback to Gemini API Key (Raja Terakhir)
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
+
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const MODELS = ['gemini-2.5-flash']
+
   let lastError: unknown
   for (const modelName of MODELS) {
     try {
+      console.log(`[Gemini API] Menghubungi model: ${modelName}...`)
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: { responseMimeType: 'application/json' },
@@ -77,6 +168,7 @@ Kembalikan HANYA JSON:
       const jsonStr = raw.startsWith('{') ? raw : (raw.match(/\{[\s\S]*\}/) ?? [''])[0]
       const parsed = JSON.parse(jsonStr) as PhotoFullAnalysis
       if (!parsed.description || !parsed.severity) throw new Error('Respons AI tidak lengkap.')
+      console.log(`[Gemini API] Sukses menggunakan model: ${modelName}`)
       return parsed
     } catch (err) {
       lastError = err
@@ -92,25 +184,56 @@ export const generateDescriptionFromPhoto = async (data: {
   photoBase64: string
   mimeType: string
 }): Promise<GeneratedDescription> => {
+  const prompt = `Anda adalah sistem AI analisis pencemaran pesisir untuk platform LautBersih Indonesia.
+Perhatikan foto ini dengan seksama dan berikan deskripsi kondisi pencemaran atau insiden lingkungan yang terlihat.
+
+Berikan respons HANYA sebagai JSON tanpa teks tambahan:
+{
+  "description": "<deskripsi kondisi yang terlihat di foto secara sangat detail, minimal 2 paragraf dalam Bahasa Indonesia. Jelaskan secara sangat rinci objek-objek yang ada di foto, kondisi lingkungan perairan/pesisir, jenis sampah/polutan/aktivitas jika ada, perkiraan tingkat kebersihan, serta suasana keseluruhan foto. Jangan membuat deskripsi yang terlalu pendek atau hanya satu paragraf.>",
+  "categoryHint": "<satu kata kategori: Sampah Plastik | Tumpahan Minyak | Limbah Industri | Sampah Organik | Insiden Maritim | Kondisi Pantai>"
+}`
+
+  // 1. Try GitHub Models First (gpt-4o-mini -> gpt-4o)
+  if (process.env.GITHUB_TOKEN) {
+    try {
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${data.mimeType};base64,${data.photoBase64}`,
+              },
+            },
+          ],
+        },
+      ]
+      const parsed = (await callGitHubModelsWithFallback(messages, true)) as GeneratedDescription
+      if (parsed.description) {
+        return parsed
+      }
+    } catch (err: any) {
+      console.warn('[Fallback] GitHub Models gagal sepenuhnya, berpindah ke Gemini API (Raja Terakhir)...')
+    }
+  }
+
+  // 2. Fallback to Gemini API Key (Raja Terakhir)
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
 
   const genAI = new GoogleGenerativeAI(apiKey)
   const MODELS = ['gemini-2.5-flash']
 
-  const prompt = `Anda adalah sistem AI analisis pencemaran pesisir untuk platform LautBersih Indonesia.
-Perhatikan foto ini dengan seksama dan berikan deskripsi kondisi pencemaran atau insiden lingkungan yang terlihat.
-
-Berikan respons HANYA sebagai JSON tanpa teks tambahan:
-{
-  "description": "<deskripsi kondisi yang terlihat di foto, 2-4 kalimat dalam Bahasa Indonesia. Sebutkan jenis sampah/polutan yang terlihat, perkiraan luasan, dan kondisi lingkungan sekitarnya>",
-  "categoryHint": "<satu kata kategori: Sampah Plastik | Tumpahan Minyak | Limbah Industri | Sampah Organik | Insiden Maritim | Kondisi Pantai>"
-}`
-
   let lastError: unknown
   for (const modelName of MODELS) {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: 'application/json' } })
+      console.log(`[Gemini API] Menghubungi model: ${modelName}...`)
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { responseMimeType: 'application/json' },
+      })
       const result = await model.generateContent([
         { inlineData: { data: data.photoBase64, mimeType: data.mimeType } },
         prompt,
@@ -119,6 +242,7 @@ Berikan respons HANYA sebagai JSON tanpa teks tambahan:
       const jsonStr = raw.startsWith('{') ? raw : (raw.match(/\{[\s\S]*\}/) ?? [''])[0]
       const parsed = JSON.parse(jsonStr) as GeneratedDescription
       if (!parsed.description) throw new Error('Respons AI tidak lengkap.')
+      console.log(`[Gemini API] Sukses menggunakan model: ${modelName}`)
       return parsed
     } catch (err) {
       lastError = err
@@ -130,27 +254,12 @@ Berikan respons HANYA sebagai JSON tanpa teks tambahan:
   throw lastError
 }
 
-export type GeminiAnalysis = {
-  categoryLabel: string
-  confidence: string
-  recommendations: string[]
-  severity: string
-  severityTone: 'critical' | 'moderate' | 'safe'
-  summary: string
-}
-
 export const analyzeWithGeminiVision = async (data: {
   photoBase64: string
   mimeType: string
   title?: string
   coordinates?: string
 }): Promise<GeminiAnalysis> => {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
-
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const MODELS = ['gemini-2.5-flash']
-
   const contextLines = [
     data.title ? `- Judul: ${data.title}` : null,
     data.coordinates ? `- Koordinat GPS: ${data.coordinates}` : null,
@@ -190,9 +299,43 @@ Kembalikan HANYA JSON tanpa teks tambahan:
   "recommendations": ["<tindakan 1>", "<tindakan 2>", "<tindakan 3>"]
 }`
 
+  // 1. Try GitHub Models First (gpt-4o-mini -> gpt-4o)
+  if (process.env.GITHUB_TOKEN) {
+    try {
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${data.mimeType};base64,${data.photoBase64}`,
+              },
+            },
+          ],
+        },
+      ]
+      const parsed = (await callGitHubModelsWithFallback(messages, true)) as GeminiAnalysis
+      if (parsed.severity && Array.isArray(parsed.recommendations)) {
+        return parsed
+      }
+    } catch (err: any) {
+      console.warn('[Fallback] GitHub Models gagal sepenuhnya, berpindah ke Gemini API (Raja Terakhir)...')
+    }
+  }
+
+  // 2. Fallback to Gemini API Key (Raja Terakhir)
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
+
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const MODELS = ['gemini-2.5-flash']
+
   let lastError: unknown
   for (const modelName of MODELS) {
     try {
+      console.log(`[Gemini API] Menghubungi model: ${modelName}...`)
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: { responseMimeType: 'application/json' },
@@ -207,6 +350,7 @@ Kembalikan HANYA JSON tanpa teks tambahan:
       if (!parsed.severity || !Array.isArray(parsed.recommendations)) {
         throw new Error('Struktur respons AI tidak valid.')
       }
+      console.log(`[Gemini API] Sukses menggunakan model: ${modelName}`)
       return parsed
     } catch (err) {
       lastError = err
@@ -225,13 +369,6 @@ export const analyzeWithGemini = async (data: {
   description: string
   title: string
 }): Promise<GeminiAnalysis> => {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
-
-  const genAI = new GoogleGenerativeAI(apiKey)
-
-  const FALLBACK_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
-
   const prompt = `Anda adalah sistem AI analisis insiden maritim untuk platform LautBersih Indonesia.
 Analisis laporan insiden maritim berikut dan berikan respons HANYA sebagai JSON tanpa teks tambahan.
 
@@ -251,9 +388,35 @@ Kembalikan JSON dengan skema persis ini:
   "recommendations": ["<tindakan 1>", "<tindakan 2>", "<tindakan 3>"]
 }`
 
+  // 1. Try GitHub Models First (gpt-4o-mini -> gpt-4o)
+  if (process.env.GITHUB_TOKEN) {
+    try {
+      const messages = [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: prompt }],
+        },
+      ]
+      const parsed = (await callGitHubModelsWithFallback(messages, true)) as GeminiAnalysis
+      if (parsed.severity && Array.isArray(parsed.recommendations)) {
+        return parsed
+      }
+    } catch (err: any) {
+      console.warn('[Fallback] GitHub Models gagal sepenuhnya, berpindah ke Gemini API (Raja Terakhir)...')
+    }
+  }
+
+  // 2. Fallback to Gemini API Key (Raja Terakhir)
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY belum dikonfigurasi.')
+
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const FALLBACK_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+
   let lastError: unknown
   for (const modelName of FALLBACK_MODELS) {
     try {
+      console.log(`[Gemini API] Menghubungi model: ${modelName}...`)
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: { responseMimeType: 'application/json' },
@@ -269,6 +432,7 @@ Kembalikan JSON dengan skema persis ini:
         throw new Error('Struktur respons AI tidak valid.')
       }
 
+      console.log(`[Gemini API] Sukses menggunakan model: ${modelName}`)
       return parsed
     } catch (err) {
       lastError = err
